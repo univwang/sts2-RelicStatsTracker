@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Text.Json;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace RelicStatsTracker;
 
@@ -166,4 +168,160 @@ public static class RelicStatsManager
             $"Block: {stats.TotalBlockAmount}, " +
             $"Energy: {stats.TotalEnergyGained}");
     }
+
+    #region 持久化支持
+
+    /// <summary>
+    /// 将统计数据保存到 SavedProperties
+    /// </summary>
+    public static void SaveStatsToSavedProperties(RelicModel relic, SavedProperties props)
+    {
+        var stats = GetStats(relic);
+        if (!stats.HasAnyStats()) return;
+
+        props.ints ??= new List<SavedProperties.SavedProperty<int>>();
+
+        if (stats.TriggerCount > 0)
+        {
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsTriggerCount", stats.TriggerCount));
+        }
+
+        if (stats.TotalHealAmount > 0)
+        {
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsTotalHeal", stats.TotalHealAmount));
+        }
+
+        if (stats.TotalDamageAmount > 0)
+        {
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsTotalDamage", stats.TotalDamageAmount));
+        }
+
+        if (stats.TotalBlockAmount > 0)
+        {
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsTotalBlock", stats.TotalBlockAmount));
+        }
+
+        if (stats.TotalEnergyGained > 0)
+        {
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsTotalEnergy", stats.TotalEnergyGained));
+        }
+
+        if (stats.StrengthGained > 0)
+        {
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsStrength", stats.StrengthGained));
+        }
+
+        if (stats.DexterityGained > 0)
+        {
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsDexterity", stats.DexterityGained));
+        }
+
+        if (stats.CardsDrawn > 0)
+        {
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsCardsDrawn", stats.CardsDrawn));
+        }
+
+        // 自定义统计数据序列化为 JSON
+        if (stats.CustomStats.Count > 0)
+        {
+            var customJson = JsonSerializer.Serialize(stats.CustomStats);
+            props.strings ??= new List<SavedProperties.SavedProperty<string>>();
+            props.strings.Add(new SavedProperties.SavedProperty<string>("RelicStatsCustom", customJson));
+        }
+    }
+
+    /// <summary>
+    /// 从 SavedProperties 加载统计数据
+    /// </summary>
+    public static RelicStatsData? LoadStatsFromSavedProperties(SavedProperties props)
+    {
+        if (props.ints == null && props.strings == null) return null;
+
+        var stats = new RelicStatsData();
+        bool found = false;
+
+        if (props.ints != null)
+        {
+            foreach (var prop in props.ints)
+            {
+                switch (prop.name)
+                {
+                    case "RelicStatsTriggerCount":
+                        stats.TriggerCount = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsTotalHeal":
+                        stats.TotalHealAmount = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsTotalDamage":
+                        stats.TotalDamageAmount = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsTotalBlock":
+                        stats.TotalBlockAmount = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsTotalEnergy":
+                        stats.TotalEnergyGained = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsStrength":
+                        stats.StrengthGained = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsDexterity":
+                        stats.DexterityGained = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsCardsDrawn":
+                        stats.CardsDrawn = prop.value;
+                        found = true;
+                        break;
+                }
+            }
+        }
+
+        // 加载自定义统计数据
+        if (props.strings != null)
+        {
+            foreach (var prop in props.strings)
+            {
+                if (prop.name == "RelicStatsCustom")
+                {
+                    try
+                    {
+                        var customStats = JsonSerializer.Deserialize<Dictionary<string, int>>(prop.value);
+                        if (customStats != null)
+                        {
+                            stats.CustomStats = customStats;
+                            found = true;
+                        }
+                    }
+                    catch
+                    {
+                        // 忽略反序列化错误
+                    }
+                }
+            }
+        }
+
+        return found ? stats : null;
+    }
+
+    /// <summary>
+    /// 将统计数据加载到运行时缓存
+    /// </summary>
+    public static void LoadStatsToRuntime(RelicModel relic, SavedProperties props)
+    {
+        var stats = LoadStatsFromSavedProperties(props);
+        if (stats != null)
+        {
+            string key = GetRelicKey(relic);
+            _currentRunStats[key] = stats;
+            MainFile.Logger.Info($"[RelicStats] Loaded stats for {relic.Id.Entry}: TriggerCount={stats.TriggerCount}");
+        }
+    }
+
+    #endregion
 }

@@ -14,6 +14,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace RelicStatsTracker;
@@ -60,9 +61,11 @@ public static class Patches
 
     /// <summary>
     /// 在新局开始时清除统计数据
+    /// 注意：只 Patch InitializeNewRun，不 Patch Launch
+    /// 因为 Launch 在加载存档时也会被调用
     /// </summary>
-    [HarmonyPatch(typeof(RunManager), nameof(RunManager.Launch))]
-    public static class RunManager_Launch_Patch
+    [HarmonyPatch(typeof(RunManager), "InitializeNewRun")]
+    public static class RunManager_InitializeNewRun_Patch
     {
         public static void Prefix()
         {
@@ -184,14 +187,13 @@ public static class Patches
         public static void Postfix(Shuriken __instance, PlayerChoiceContext context, CardPlay cardPlay)
         {
             // 检查是否是攻击牌且是当前玩家打出的
-            if (cardPlay.Card.Owner == __instance.Owner && 
-                CombatManager.Instance.IsInProgress && 
+            if (cardPlay.Card.Owner == __instance.Owner &&
+                CombatManager.Instance.IsInProgress &&
                 cardPlay.Card.Type == CardType.Attack)
             {
                 // 检查是否触发了力量获取
                 int attacksPlayed = __instance.DisplayAmount;
-                int threshold = __instance.DynamicVars.Cards.IntValue;
-                
+
                 // 如果当前计数为0，说明刚刚触发了一次
                 if (attacksPlayed == 0)
                 {
@@ -215,12 +217,12 @@ public static class Patches
     {
         public static void Postfix(Kunai __instance, PlayerChoiceContext context, CardPlay cardPlay)
         {
-            if (cardPlay.Card.Owner == __instance.Owner && 
-                CombatManager.Instance.IsInProgress && 
+            if (cardPlay.Card.Owner == __instance.Owner &&
+                CombatManager.Instance.IsInProgress &&
                 cardPlay.Card.Type == CardType.Attack)
             {
                 int attacksPlayed = __instance.DisplayAmount;
-                
+
                 // 如果当前计数为0，说明刚刚触发了一次
                 if (attacksPlayed == 0)
                 {
@@ -244,12 +246,12 @@ public static class Patches
     {
         public static void Postfix(OrnamentalFan __instance, PlayerChoiceContext context, CardPlay cardPlay)
         {
-            if (cardPlay.Card.Owner == __instance.Owner && 
-                CombatManager.Instance.IsInProgress && 
+            if (cardPlay.Card.Owner == __instance.Owner &&
+                CombatManager.Instance.IsInProgress &&
                 cardPlay.Card.Type == CardType.Attack)
             {
                 int attacksPlayed = __instance.DisplayAmount;
-                
+
                 // 如果当前计数为0，说明刚刚触发了一次
                 if (attacksPlayed == 0)
                 {
@@ -261,7 +263,6 @@ public static class Patches
     }
 
     #endregion
-    
 
     #region 孙子兵法 (ArtOfWar) - 能量类遗物
 
@@ -275,7 +276,7 @@ public static class Patches
         public static void Postfix(ArtOfWar __instance, Player player)
         {
             if (player != __instance.Owner) return;
-            
+
             // 检查是否触发了能量获取
             // 如果状态变为Active且回合数大于1，说明触发了
             if (__instance.Owner.Creature.CombatState?.RoundNumber > 1)
@@ -300,7 +301,7 @@ public static class Patches
     /// </summary>
     private static T? GetPrivateField<T>(object obj, string fieldName)
     {
-        var field = obj.GetType().GetField(fieldName, 
+        var field = obj.GetType().GetField(fieldName,
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
         return field != null ? (T?)field.GetValue(obj) : default;
     }
@@ -316,13 +317,13 @@ public static class Patches
     [HarmonyPatch(typeof(CentennialPuzzle), nameof(CentennialPuzzle.AfterDamageReceived))]
     public static class CentennialPuzzle_AfterDamageReceived_Patch
     {
-        public static void Postfix(CentennialPuzzle __instance, PlayerChoiceContext choiceContext, 
+        public static void Postfix(CentennialPuzzle __instance, PlayerChoiceContext choiceContext,
             Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
         {
             // 检查是否触发了抽牌
-            if (CombatManager.Instance.IsInProgress && 
-                target == __instance.Owner.Creature && 
-                result.UnblockedDamage > 0 && 
+            if (CombatManager.Instance.IsInProgress &&
+                target == __instance.Owner.Creature &&
+                result.UnblockedDamage > 0 &&
                 !__instance.UsedThisCombat)
             {
                 int cardsDrawn = __instance.DynamicVars.Cards.IntValue;
@@ -347,7 +348,7 @@ public static class Patches
             if (cardPlay.Card.Owner == __instance.Owner && cardPlay.Card.Type == CardType.Attack)
             {
                 int attacksPlayed = __instance.DisplayAmount;
-                
+
                 // 如果当前计数为0，说明刚刚触发了一次
                 if (attacksPlayed == 0 && CombatManager.Instance.IsInProgress)
                 {
@@ -369,7 +370,7 @@ public static class Patches
     [HarmonyPatch(typeof(BagOfMarbles), nameof(BagOfMarbles.BeforeSideTurnStart))]
     public static class BagOfMarbles_BeforeSideTurnStart_Patch
     {
-        public static void Postfix(BagOfMarbles __instance, PlayerChoiceContext choiceContext, 
+        public static void Postfix(BagOfMarbles __instance, PlayerChoiceContext choiceContext,
             CombatSide side, CombatState combatState)
         {
             // 只在第一回合且是玩家方时记录
@@ -377,6 +378,63 @@ public static class Patches
             {
                 int vulnerableAmount = __instance.DynamicVars.Vulnerable.IntValue;
                 RelicStatsManager.RecordCustomStat(__instance, "vulnerable_applied", vulnerableAmount);
+            }
+        }
+    }
+
+    #endregion
+
+    #region 笔尖 (PenNib) - 伤害类遗物
+
+    /// <summary>
+    /// 追踪笔尖（PenNib）的触发
+    /// 每打出10张攻击牌，下一张攻击牌伤害翻倍
+    /// </summary>
+    [HarmonyPatch(typeof(PenNib), nameof(PenNib.ModifyDamageMultiplicative))]
+    public static class PenNib_ModifyDamageMultiplicative_Patch
+    {
+        public static void Postfix(PenNib __instance, Creature? target, decimal amount, ValueProp props,
+            Creature? dealer, CardModel? cardSource, ref decimal __result)
+        {
+            // 如果返回2，说明伤害翻倍了
+            if (__result == 2m && cardSource != null)
+            {
+                // 记录一次双倍伤害触发
+                RelicStatsManager.RecordCustomStat(__instance, "double_damage_count", 1);
+            }
+        }
+    }
+
+    #endregion
+
+    #region 数据持久化
+
+    /// <summary>
+    /// 在遗物序列化时保存统计数据
+    /// </summary>
+    [HarmonyPatch(typeof(RelicModel), nameof(RelicModel.ToSerializable))]
+    public static class RelicModel_ToSerializable_Patch
+    {
+        public static void Postfix(RelicModel __instance, SerializableRelic __result)
+        {
+            // 将统计数据保存到 SerializableRelic.Props
+            __result.Props ??= new SavedProperties();
+            RelicStatsManager.SaveStatsToSavedProperties(__instance, __result.Props);
+        }
+    }
+
+    /// <summary>
+    /// 在遗物从序列化数据恢复时加载统计数据
+    /// </summary>
+    [HarmonyPatch(typeof(RelicModel), nameof(RelicModel.FromSerializable))]
+    public static class RelicModel_FromSerializable_Patch
+    {
+        public static void Postfix(SerializableRelic save, RelicModel __result)
+        {
+            // 从 SerializableRelic.Props 加载统计数据到运行时缓存
+            if (save.Props != null)
+            {
+                RelicStatsManager.LoadStatsToRuntime(__result, save.Props);
             }
         }
     }

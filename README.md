@@ -8,6 +8,8 @@
 
 - 📊 **统计数据追踪**：追踪遗物的触发次数、治疗量、格挡量、能量获取等
 - 💬 **悬浮提示增强**：在遗物悬浮提示中显示统计数据
+- 💾 **数据持久化**：保存退出游戏后，再回来能够正确读取遗物的统计数据
+- 📜 **历史记录支持**：一局游戏成功或失败后能够在历史记录栏查看遗物统计信息
 - 🌐 **多语言支持**：支持中文和英文
 - 🔄 **自动重置**：新局开始时自动清除上一局的统计数据
 
@@ -91,6 +93,7 @@ RelicStatsTracker/
 ├── MainFile.cs              # Mod 入口
 ├── RelicStatsData.cs        # 统计数据结构
 ├── RelicStatsManager.cs     # 统计数据管理器
+├── RelicStatsProperties.cs  # 属性注册类（用于持久化）
 ├── Localization.cs          # 本地化支持
 ├── Patches.cs               # Harmony Patches
 ├── mod_manifest.json        # Mod 清单
@@ -102,6 +105,33 @@ RelicStatsTracker/
 ```
 
 ## 技术实现
+
+### 数据持久化
+
+游戏使用 `SavedProperties` 系统来序列化遗物数据。该系统需要预先注册属性名才能正确进行网络序列化。
+
+本 Mod 通过以下方式实现持久化：
+
+1. **属性注册**：创建 `RelicStatsProperties` 类，定义带有 `[SavedProperty]` 特性的属性
+2. **运行时注入**：在 Mod 初始化时调用 `SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(RelicStatsProperties))`
+3. **序列化 Patch**：Patch `RelicModel.ToSerializable()` 方法，在序列化时保存统计数据
+4. **反序列化 Patch**：Patch `RelicModel.FromSerializable()` 方法，在加载时恢复统计数据
+
+```csharp
+// 属性注册类
+public class RelicStatsProperties
+{
+    [SavedProperty]
+    public int RelicStatsTriggerCount { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsTotalHeal { get; set; }
+    // ...
+}
+
+// Mod 初始化时注册
+SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(RelicStatsProperties));
+```
 
 ### 悬浮提示增强
 
@@ -158,12 +188,14 @@ public static class YourRelic_TriggerMethod_Patch
 
 2. 如果需要新的统计类型，在 `RelicStatsData.cs` 中添加字段，在 `RelicStatType` 枚举中添加类型。
 
-3. 在本地化文件中添加对应的文本。
+3. 如果需要新的持久化属性，在 `RelicStatsProperties.cs` 中添加属性。
+
+4. 在本地化文件中添加对应的文本。
 
 ## 已知限制
 
 - 统计数据仅在当前局有效，新局开始后会重置
-- 不支持历史记录中的统计数据查看（游戏序列化系统限制）
+- 历史记录中的统计数据在游戏版本更新后可能不兼容
 
 ## 许可证
 

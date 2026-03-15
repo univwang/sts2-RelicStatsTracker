@@ -24,7 +24,7 @@ public static class Localization
         public const string StrengthGained = "strength_gained";
         public const string DexterityGained = "dexterity_gained";
         public const string CardsDrawn = "cards_drawn";
-        public const string StatsHeader = "stats_header";
+        public const string StatsHeader = "stats.header";
         // 自定义统计
         public const string DoubleDamageCount = "double_damage_count";
         public const string VulnerableApplied = "vulnerable_applied";
