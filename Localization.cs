@@ -9,7 +9,7 @@ namespace RelicStatsTracker;
 /// </summary>
 public static class Localization
 {
-    private const string LocTable = "relic_stats";
+    private const string LocTable = "relics";
 
     /// <summary>
     /// 本地化键名
