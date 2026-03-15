@@ -83,12 +83,15 @@ public static class Patches
     /// 战斗胜利后治疗6点生命值
     /// </summary>
     [HarmonyPatch(typeof(BurningBlood), nameof(BurningBlood.AfterCombatVictory))]
-    public static class BurningBlood_AfterCombatVictory_Patch
-    {
+    public static class BurningBlood_AfterCombatVictory_Patch {
+        private static int lastHp;
+        public static void Prefix(BurningBlood __instance, CombatRoom _) {
+            lastHp = __instance.Owner.Creature.CurrentHp;
+        }
         public static void Postfix(BurningBlood __instance, CombatRoom _)
         {
             // 获取治疗量（从动态变量中获取）
-            int healAmount = __instance.DynamicVars.Heal.IntValue;
+            int healAmount = __instance.Owner.Creature.CurrentHp - lastHp;
             RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, healAmount);
         }
     }
