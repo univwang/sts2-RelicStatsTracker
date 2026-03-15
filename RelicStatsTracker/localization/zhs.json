@@ -1,0 +1,13 @@
+{
+  "stats.header": "\n\n[b]--- 统计 ---[/b]",
+  "stats.trigger_count": "[color=yellow]触发次数: {0}[/color]",
+  "stats.total_heal": "[color=green]总治疗量: {0}[/color]",
+  "stats.total_damage": "[color=red]总伤害量: {0}[/color]",
+  "stats.total_block": "[color=blue]总格挡量: {0}[/color]",
+  "stats.total_energy": "[color=cyan]总能量: {0}[/color]",
+  "stats.strength_gained": "[color=red]获得力量: {0}[/color]",
+  "stats.dexterity_gained": "[color=blue]获得敏捷: {0}[/color]",
+  "stats.cards_drawn": "[color=white]抽牌数: {0}[/color]",
+  "stats.double_damage": "[color=orange]双倍伤害: {0}次[/color]",
+  "stats.vulnerable_applied": "[color=orange]施加易伤: {0}层[/color]"
+}

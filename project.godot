@@ -1,0 +1,7 @@
+[gd_resource type="ProjectSettings" load_steps=1 format=3]
+
+
+[dotnet]
+project/assembly_name="RelicStatsTracker"
+project/solution_directory="."
+project/solution_name="RelicStatsTracker"

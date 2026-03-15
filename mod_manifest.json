@@ -1,0 +1,7 @@
+{
+  "pck_name": "RelicStatsTracker",
+  "name": "Relic Stats Tracker",
+  "author": "ModAuthor",
+  "description": "追踪遗物触发统计数据，在悬浮提示中显示触发次数和总治疗量",
+  "version": "v1.0"
+}

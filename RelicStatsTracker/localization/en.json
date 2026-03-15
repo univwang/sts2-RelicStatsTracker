@@ -1,0 +1,13 @@
+{
+  "stats.header": "\n\n[b]--- Stats ---[/b]",
+  "stats.trigger_count": "[color=yellow]Triggered: {0}[/color]",
+  "stats.total_heal": "[color=green]Total Heal: {0}[/color]",
+  "stats.total_damage": "[color=red]Total Damage: {0}[/color]",
+  "stats.total_block": "[color=blue]Total Block: {0}[/color]",
+  "stats.total_energy": "[color=cyan]Total Energy: {0}[/color]",
+  "stats.strength_gained": "[color=red]Strength Gained: {0}[/color]",
+  "stats.dexterity_gained": "[color=blue]Dexterity Gained: {0}[/color]",
+  "stats.cards_drawn": "[color=white]Cards Drawn: {0}[/color]",
+  "stats.double_damage": "[color=orange]Double Damage: {0}[/color]",
+  "stats.vulnerable_applied": "[color=orange]Vulnerable Applied: {0}[/color]"
+}
