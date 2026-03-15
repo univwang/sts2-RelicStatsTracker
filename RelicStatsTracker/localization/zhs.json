@@ -1,5 +1,5 @@
 {
-  "stats.header": "\n\n[b]--- 统计 ---[/b]",
+  "stats.header": "\n[b]--- 统计 ---[/b]",
   "stats.trigger_count": "[color=yellow]触发次数: {0}[/color]",
   "stats.total_heal": "[color=green]总治疗量: {0}[/color]",
   "stats.total_damage": "[color=red]总伤害量: {0}[/color]",

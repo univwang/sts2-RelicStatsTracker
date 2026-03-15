@@ -1,5 +1,5 @@
 {
-  "stats.header": "\n\n[b]--- Stats ---[/b]",
+  "stats.header": "\n[b]--- Stats ---[/b]",
   "stats.trigger_count": "[color=yellow]Triggered: {0}[/color]",
   "stats.total_heal": "[color=green]Total Heal: {0}[/color]",
   "stats.total_damage": "[color=red]Total Damage: {0}[/color]",

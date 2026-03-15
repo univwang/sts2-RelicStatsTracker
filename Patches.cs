@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Reflection;
-using System.Threading.Tasks;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -10,13 +9,11 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
-using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace RelicStatsTracker;
@@ -71,23 +68,6 @@ public static class Patches
         {
             // 清除上一局的统计数据
             RelicStatsManager.ClearCurrentRun();
-        }
-    }
-
-    #endregion
-
-    #region 数据持久化
-
-    /// <summary>
-    /// 在遗物序列化时保存统计数据
-    /// </summary>
-    [HarmonyPatch(typeof(RelicModel), nameof(RelicModel.ToSerializable))]
-    public static class RelicModel_ToSerializable_Patch
-    {
-        public static void Postfix(RelicModel __instance, SerializableRelic __result)
-        {
-            // 将统计数据保存到 SerializableRelic.Props
-            RelicStatsManager.SaveStatsToSerializableRelic(__instance, __result);
         }
     }
 
