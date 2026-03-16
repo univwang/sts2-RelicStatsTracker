@@ -22,7 +22,7 @@
 | 无界命匣 (PhylacteryUnbound) | 召唤次数 |
 | 骨笛 (BoneFlute) | 格挡量 |
 | 异鸟宝宝 (Byrdpip) | 召唤次数 |
-| Paels Legion | 格挡翻倍次数 |
+| Paels Legion | 格挡量 |
 
 ### 治疗类
 | 遗物 | 追踪数据 |
@@ -63,7 +63,7 @@
 |------|----------|
 | 水银沙漏 (MercuryHourglass) | 触发次数、总伤害量 |
 | 开信刀 (LetterOpener) | 触发次数、总伤害量 |
-| 笔尖 (PenNib) | 触发次数、双倍伤害次数 |
+| 笔尖 (PenNib) | 触发次数、总伤害量 |
 | 弹珠袋 (BagOfMarbles) | 触发次数、施加易伤 |
 
 ### 抽牌类

@@ -1,10 +1,17 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Hooks;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.ValueProps;
 
 namespace RelicStatsTracker.Patches.Damage;
 
@@ -14,6 +21,9 @@ namespace RelicStatsTracker.Patches.Damage;
 /// </summary>
 public static class DamagePatches
 {
+    // 追踪当前被 PenNib 翻倍的卡牌
+    private static readonly HashSet<CardModel> _penNibDoubledCards = new();
+
     #region MercuryHourglass - 水银沙漏
 
     /// <summary>
@@ -75,21 +85,54 @@ public static class DamagePatches
     #region PenNib - 笔尖
 
     /// <summary>
-    /// 笔尖 - 每打出10张攻击牌，下一张攻击牌伤害翻倍
+    /// 笔尖 - 追踪被翻倍的卡牌
+    /// 在 ModifyDamageMultiplicative 中，当返回 2 时记录卡牌
     /// </summary>
-    [HarmonyPatch(typeof(PenNib), nameof(PenNib.BeforeCardPlayed))]
-    public static class PenNibBeforeCardPlayedPatch
+    [HarmonyPatch(typeof(PenNib), nameof(PenNib.ModifyDamageMultiplicative))]
+    public static class PenNibModifyDamageMultiplicativePatch
     {
-        public static void Postfix(PenNib __instance, CardPlay cardPlay)
+        public static void Postfix(PenNib __instance, Creature? target, decimal amount, ValueProp props,
+            Creature? dealer, CardModel? cardSource, ref decimal __result)
         {
-            if (cardPlay.Card.Type != CardType.Attack) return;
-            if (cardPlay.Card.Owner != __instance.Owner) return;
-
-            // 当 AttacksPlayed 刚刚归零时，说明触发了双倍伤害
-            if (__instance.AttacksPlayed == 0)
+            // 如果返回 2，说明伤害被翻倍
+            if (__result == 2m && cardSource != null)
             {
-                RelicStatsManager.RecordCustomStat(__instance, "double_damage_count", 1);
+                _penNibDoubledCards.Add(cardSource);
             }
+        }
+    }
+
+    /// <summary>
+    /// 笔尖 - 在攻击完成后统计伤害
+    /// </summary>
+    [HarmonyPatch(typeof(Hook), nameof(Hook.AfterAttack))]
+    public static class HookAfterAttackPatch
+    {
+        public static void Postfix(CombatState combatState, AttackCommand command, Task __result)
+        {
+            // 检查是否是 PenNib 翻倍的攻击
+            var cardSource = command.ModelSource as CardModel;
+            if (cardSource == null || !_penNibDoubledCards.Contains(cardSource)) return;
+
+            // 移除追踪
+            _penNibDoubledCards.Remove(cardSource);
+
+            __result.ContinueWith(_ =>
+            {
+                // 统计伤害
+                int totalDamage = command.Results.Sum(r => r.TotalDamage);
+                if (totalDamage <= 0) return;
+
+                // 找到 PenNib 遗物
+                var player = command.Attacker?.Player ?? command.Attacker?.PetOwner;
+                if (player == null) return;
+
+                var penNib = player.Relics.OfType<PenNib>().FirstOrDefault();
+                if (penNib != null)
+                {
+                    RelicStatsManager.RecordTrigger(penNib, RelicStatType.Damage, totalDamage);
+                }
+            });
         }
     }
 
