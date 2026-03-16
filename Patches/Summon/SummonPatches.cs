@@ -3,6 +3,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models.Relics;
 
@@ -137,31 +138,28 @@ public static class SummonPatches
     #region PaelsLegion - 远古遗物
 
     /// <summary>
-    /// PaelsLegion - 格挡翻倍触发
-    /// 在 AfterCardPlayed 中检测格挡翻倍效果
+    /// PaelsLegion - 格挡翻倍
+    /// 只有第一张触发效果的防御牌才统计
     /// </summary>
-    [HarmonyPatch(typeof(global::MegaCrit.Sts2.Core.Models.Relics.PaelsLegion), nameof(global::MegaCrit.Sts2.Core.Models.Relics.PaelsLegion.AfterCardPlayed))]
-    public static class PaelsLegionAfterCardPlayedPatch
+    [HarmonyPatch(typeof(global::MegaCrit.Sts2.Core.Models.Relics.PaelsLegion), nameof(global::MegaCrit.Sts2.Core.Models.Relics.PaelsLegion.AfterModifyingBlockAmount))]
+    public static class PaelsLegionAfterModifyingBlockAmountPatch
     {
-        public static void Postfix(global::MegaCrit.Sts2.Core.Models.Relics.PaelsLegion __instance,
-            MegaCrit.Sts2.Core.Entities.Cards.CardPlay cardPlay, Task __result)
+        private static bool _wasAffectedCardPlayNull;
+
+        public static void Prefix(global::MegaCrit.Sts2.Core.Models.Relics.PaelsLegion __instance, decimal modifiedAmount, CardPlay? cardPlay)
         {
-            __result.ContinueWith(_ =>
-            {
-                // 检查是否触发了格挡翻倍（通过检查 AffectedCardPlay 是否被清除）
-                // 如果触发了，遗物会 Flash 并且 Cooldown 会被设置
-                var affectedCardPlay = Patches.PatchHelper.GetPrivateField<MegaCrit.Sts2.Core.Entities.Cards.CardPlay?>(__instance, "_affectedCardPlay");
-                if (affectedCardPlay == null)
-                {
-                    // 检查 cooldown 是否刚被设置（表示触发了格挡翻倍）
-                    var cooldown = Patches.PatchHelper.GetPrivateField<int>(__instance, "_cooldown");
-                    var turnsNeeded = __instance.DynamicVars["Turns"].IntValue;
-                    if (cooldown == turnsNeeded)
-                    {
-                        RelicStatsManager.RecordTrigger(__instance, RelicStatType.BlockDoubled, 1);
-                    }
-                }
-            });
+            // 记录 AffectedCardPlay 是否为 null（表示还未触发过）
+            var affectedCardPlay = PatchHelper.GetPrivateField<CardPlay?>(__instance, "_affectedCardPlay");
+            _wasAffectedCardPlayNull = affectedCardPlay == null && cardPlay != null && modifiedAmount > 0;
+        }
+
+        public static void Postfix(global::MegaCrit.Sts2.Core.Models.Relics.PaelsLegion __instance, decimal modifiedAmount)
+        {
+            if (!_wasAffectedCardPlayNull) return;
+
+            // 只有第一张触发效果的卡牌才统计
+            // modifiedAmount 是翻倍后的格挡量（即额外获得的格挡）
+            RelicStatsManager.RecordTrigger(__instance, RelicStatType.Block, (int)modifiedAmount / 2);
         }
     }
 
