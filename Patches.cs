@@ -1,15 +1,11 @@
-using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rooms;
@@ -21,6 +17,7 @@ namespace RelicStatsTracker;
 
 /// <summary>
 /// 遗物统计追踪的 Harmony Patches
+/// 参考 STS1 RelicStats mod 的实现方式
 /// </summary>
 public static class Patches
 {
@@ -28,24 +25,17 @@ public static class Patches
 
     /// <summary>
     /// 在遗物悬浮提示中添加统计数据
-    /// 通过修改 HoverTip 属性，在描述后追加统计信息
     /// </summary>
     [HarmonyPatch(typeof(RelicModel), nameof(RelicModel.HoverTip), MethodType.Getter)]
     public static class RelicModel_HoverTip_Patch
     {
         public static void Postfix(RelicModel __instance, ref HoverTip __result)
         {
-            // 获取统计数据
             var stats = RelicStatsManager.GetStats(__instance);
 
-            // 如果有统计数据，修改描述文本
             if (stats.HasAnyStats())
             {
-                // 构建统计信息文本
                 var statsText = Localization.BuildStatsText(stats);
-
-                // 创建新的 HoverTip，在原描述后追加统计信息
-                // 注意：HoverTip 是 record struct，需要创建新实例
                 __result = new HoverTip(
                     __instance.Title,
                     __result.Description + statsText,
@@ -61,236 +51,358 @@ public static class Patches
 
     /// <summary>
     /// 在新局开始时清除统计数据
-    /// 注意：只 Patch InitializeNewRun，不 Patch Launch
-    /// 因为 Launch 在加载存档时也会被调用
     /// </summary>
     [HarmonyPatch(typeof(RunManager), "InitializeNewRun")]
     public static class RunManager_InitializeNewRun_Patch
     {
         public static void Prefix()
         {
-            // 清除上一局的统计数据
             RelicStatsManager.ClearCurrentRun();
         }
     }
 
     #endregion
 
-    #region 燃烧之血 (BurningBlood) - 治疗类遗物
+    #region 治疗类遗物 - 使用前后生命值差值计算实际治疗量
 
     /// <summary>
-    /// 追踪燃烧之血（BurningBlood）的触发
-    /// 战斗胜利后治疗6点生命值
+    /// 燃烧之血 (BurningBlood) - 战斗胜利后治疗
+    /// 使用 Prefix 记录治疗前生命值，Postfix 计算实际治疗量
     /// </summary>
     [HarmonyPatch(typeof(BurningBlood), nameof(BurningBlood.AfterCombatVictory))]
-    public static class BurningBlood_AfterCombatVictory_Patch {
-        private static int lastHp;
-        public static void Prefix(BurningBlood __instance, CombatRoom _) {
-            lastHp = __instance.Owner.Creature.CurrentHp;
-        }
-        public static void Postfix(BurningBlood __instance, CombatRoom _)
+    public static class BurningBlood_AfterCombatVictory_Patch
+    {
+        private static int _hpBeforeHeal;
+
+        public static void Prefix(BurningBlood __instance, CombatRoom _)
         {
-            // 获取治疗量（从动态变量中获取）
-            int healAmount = __instance.Owner.Creature.CurrentHp - lastHp;
-            RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, healAmount);
+            _hpBeforeHeal = __instance.Owner.Creature.CurrentHp;
+        }
+
+        public static void Postfix(BurningBlood __instance, CombatRoom _, Task __result)
+        {
+            // 在原任务完成后执行统计
+            __result.ContinueWith(_ =>
+            {
+                int actualHeal = __instance.Owner.Creature.CurrentHp - _hpBeforeHeal;
+                if (actualHeal > 0)
+                {
+                    RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, actualHeal);
+                }
+            });
         }
     }
 
-    #endregion
-
-    #region 黑血 (BlackBlood) - 治疗类遗物
-
     /// <summary>
-    /// 追踪黑血（BlackBlood）的触发
-    /// 战斗胜利后治疗12点生命值
+    /// 黑血 (BlackBlood) - 战斗胜利后治疗
     /// </summary>
     [HarmonyPatch(typeof(BlackBlood), nameof(BlackBlood.AfterCombatVictory))]
     public static class BlackBlood_AfterCombatVictory_Patch
     {
-        public static void Postfix(BlackBlood __instance, CombatRoom _)
+        private static int _hpBeforeHeal;
+
+        public static void Prefix(BlackBlood __instance, CombatRoom _)
         {
-            int healAmount = __instance.DynamicVars.Heal.IntValue;
-            RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, healAmount);
+            _hpBeforeHeal = __instance.Owner.Creature.CurrentHp;
+        }
+
+        public static void Postfix(BlackBlood __instance, CombatRoom _, Task __result)
+        {
+            __result.ContinueWith(_ =>
+            {
+                int actualHeal = __instance.Owner.Creature.CurrentHp - _hpBeforeHeal;
+                if (actualHeal > 0)
+                {
+                    RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, actualHeal);
+                }
+            });
         }
     }
 
-    #endregion
-
-    #region 小血瓶 (BloodVial) - 治疗类遗物
-
     /// <summary>
-    /// 追踪小血瓶（BloodVial）的触发
-    /// 第一回合开始时治疗2点生命值
+    /// 小血瓶 (BloodVial) - 第一回合开始时治疗
     /// </summary>
     [HarmonyPatch(typeof(BloodVial), nameof(BloodVial.AfterPlayerTurnStartLate))]
     public static class BloodVial_AfterPlayerTurnStartLate_Patch
     {
-        public static void Postfix(BloodVial __instance, PlayerChoiceContext choiceContext, Player player)
+        private static int _hpBeforeHeal;
+        private static bool _shouldTrack;
+
+        public static void Prefix(BloodVial __instance, PlayerChoiceContext choiceContext, Player player)
         {
-            // 只在第一回合且是当前玩家时记录
-            if (player == __instance.Owner && player.Creature.CombatState.RoundNumber <= 1)
+            _shouldTrack = player == __instance.Owner && player.Creature.CombatState.RoundNumber <= 1;
+            if (_shouldTrack)
             {
-                int healAmount = __instance.DynamicVars.Heal.IntValue;
-                RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, healAmount);
+                _hpBeforeHeal = __instance.Owner.Creature.CurrentHp;
             }
+        }
+
+        public static void Postfix(BloodVial __instance, PlayerChoiceContext choiceContext, Player player, Task __result)
+        {
+            if (!_shouldTrack) return;
+
+            __result.ContinueWith(_ =>
+            {
+                int actualHeal = __instance.Owner.Creature.CurrentHp - _hpBeforeHeal;
+                if (actualHeal > 0)
+                {
+                    RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, actualHeal);
+                }
+            });
         }
     }
 
     #endregion
 
-    #region 锚 (Anchor) - 格挡类遗物
+    #region 格挡类遗物
 
     /// <summary>
-    /// 追踪锚（Anchor）的触发
-    /// 战斗开始时获得10点格挡
+    /// 锚 (Anchor) - 战斗开始时获得格挡
     /// </summary>
     [HarmonyPatch(typeof(Anchor), nameof(Anchor.BeforeCombatStart))]
     public static class Anchor_BeforeCombatStart_Patch
     {
-        public static void Postfix(Anchor __instance)
+        public static void Postfix(Anchor __instance, Task __result)
         {
-            int blockAmount = __instance.DynamicVars.Block.IntValue;
-            RelicStatsManager.RecordTrigger(__instance, RelicStatType.Block, blockAmount);
-        }
-    }
-
-    #endregion
-
-    #region 提灯 (Lantern) - 能量类遗物
-
-    /// <summary>
-    /// 追踪提灯（Lantern）的触发
-    /// 第一回合开始时获得1点能量
-    /// </summary>
-    [HarmonyPatch(typeof(Lantern), nameof(Lantern.AfterSideTurnStart))]
-    public static class Lantern_AfterSideTurnStart_Patch
-    {
-        public static void Postfix(Lantern __instance, CombatSide side, CombatState combatState)
-        {
-            // 只在第一回合且是玩家方时记录
-            if (side == __instance.Owner.Creature.Side && combatState.RoundNumber <= 1)
+            __result.ContinueWith(_ =>
             {
-                int energyAmount = __instance.DynamicVars.Energy.IntValue;
-                RelicStatsManager.RecordTrigger(__instance, RelicStatType.Energy, energyAmount);
-            }
+                int blockAmount = __instance.DynamicVars.Block.IntValue;
+                RelicStatsManager.RecordTrigger(__instance, RelicStatType.Block, blockAmount);
+            });
         }
     }
 
-    #endregion
-
-    #region 手里剑 (Shuriken) - 力量类遗物
-
     /// <summary>
-    /// 追踪手里剑（Shuriken）的触发
-    /// 每打出3张攻击牌获得1点力量
-    /// </summary>
-    [HarmonyPatch(typeof(Shuriken), nameof(Shuriken.AfterCardPlayed))]
-    public static class Shuriken_AfterCardPlayed_Patch
-    {
-        public static void Postfix(Shuriken __instance, PlayerChoiceContext context, CardPlay cardPlay)
-        {
-            // 检查是否是攻击牌且是当前玩家打出的
-            if (cardPlay.Card.Owner == __instance.Owner &&
-                CombatManager.Instance.IsInProgress &&
-                cardPlay.Card.Type == CardType.Attack)
-            {
-                // 检查是否触发了力量获取
-                int attacksPlayed = __instance.DisplayAmount;
-
-                // 如果当前计数为0，说明刚刚触发了一次
-                if (attacksPlayed == 0)
-                {
-                    int strengthAmount = __instance.DynamicVars.Strength.IntValue;
-                    RelicStatsManager.RecordTrigger(__instance, RelicStatType.Strength, strengthAmount);
-                }
-            }
-        }
-    }
-
-    #endregion
-
-    #region 苦无 (Kunai) - 敏捷类遗物
-
-    /// <summary>
-    /// 追踪苦无（Kunai）的触发
-    /// 每打出3张攻击牌获得1点敏捷
-    /// </summary>
-    [HarmonyPatch(typeof(Kunai), nameof(Kunai.AfterCardPlayed))]
-    public static class Kunai_AfterCardPlayed_Patch
-    {
-        public static void Postfix(Kunai __instance, PlayerChoiceContext context, CardPlay cardPlay)
-        {
-            if (cardPlay.Card.Owner == __instance.Owner &&
-                CombatManager.Instance.IsInProgress &&
-                cardPlay.Card.Type == CardType.Attack)
-            {
-                int attacksPlayed = __instance.DisplayAmount;
-
-                // 如果当前计数为0，说明刚刚触发了一次
-                if (attacksPlayed == 0)
-                {
-                    int dexterityAmount = __instance.DynamicVars.Dexterity.IntValue;
-                    RelicStatsManager.RecordTrigger(__instance, RelicStatType.Dexterity, dexterityAmount);
-                }
-            }
-        }
-    }
-
-    #endregion
-
-    #region 华丽扇 (OrnamentalFan) - 格挡类遗物
-
-    /// <summary>
-    /// 追踪华丽扇（OrnamentalFan）的触发
-    /// 每打出3张攻击牌获得4点格挡
+    /// 华丽扇 (OrnamentalFan) - 每打出3张攻击牌获得格挡
     /// </summary>
     [HarmonyPatch(typeof(OrnamentalFan), nameof(OrnamentalFan.AfterCardPlayed))]
     public static class OrnamentalFan_AfterCardPlayed_Patch
     {
         public static void Postfix(OrnamentalFan __instance, PlayerChoiceContext context, CardPlay cardPlay)
         {
-            if (cardPlay.Card.Owner == __instance.Owner &&
-                CombatManager.Instance.IsInProgress &&
-                cardPlay.Card.Type == CardType.Attack)
+            if (cardPlay.Card.Owner != __instance.Owner ||
+                !CombatManager.Instance.IsInProgress ||
+                cardPlay.Card.Type != CardType.Attack)
             {
-                int attacksPlayed = __instance.DisplayAmount;
+                return;
+            }
 
-                // 如果当前计数为0，说明刚刚触发了一次
-                if (attacksPlayed == 0)
-                {
-                    int blockAmount = __instance.DynamicVars.Block.IntValue;
-                    RelicStatsManager.RecordTrigger(__instance, RelicStatType.Block, blockAmount);
-                }
+            int attacksPlayedThisTurn = GetPrivateField<int>(__instance, "_attacksPlayedThisTurn");
+            int cardsNeeded = __instance.DynamicVars.Cards.IntValue;
+
+            // 当计数归零时，说明刚刚触发了
+            if (attacksPlayedThisTurn % cardsNeeded == 0)
+            {
+                int blockAmount = __instance.DynamicVars.Block.IntValue;
+                RelicStatsManager.RecordTrigger(__instance, RelicStatType.Block, blockAmount);
             }
         }
     }
 
     #endregion
 
-    #region 孙子兵法 (ArtOfWar) - 能量类遗物
+    #region 能量类遗物
 
     /// <summary>
-    /// 追踪孙子兵法（ArtOfWar）的触发
-    /// 如果本回合没有打出攻击牌，下回合获得1点能量
+    /// 提灯 (Lantern) - 第一回合开始时获得能量
+    /// </summary>
+    [HarmonyPatch(typeof(Lantern), nameof(Lantern.AfterSideTurnStart))]
+    public static class Lantern_AfterSideTurnStart_Patch
+    {
+        public static void Postfix(Lantern __instance, CombatSide side, CombatState combatState, Task __result)
+        {
+            if (side != __instance.Owner.Creature.Side || combatState.RoundNumber > 1) return;
+
+            __result.ContinueWith(_ =>
+            {
+                int energyAmount = __instance.DynamicVars.Energy.IntValue;
+                RelicStatsManager.RecordTrigger(__instance, RelicStatType.Energy, energyAmount);
+            });
+        }
+    }
+
+    /// <summary>
+    /// 孙子兵法 (ArtOfWar) - 未打出攻击牌时获得能量
     /// </summary>
     [HarmonyPatch(typeof(ArtOfWar), nameof(ArtOfWar.AfterEnergyReset))]
     public static class ArtOfWar_AfterEnergyReset_Patch
     {
-        public static void Postfix(ArtOfWar __instance, Player player)
+        public static void Postfix(ArtOfWar __instance, Player player, Task __result)
         {
             if (player != __instance.Owner) return;
+            if (__instance.Owner.Creature.CombatState?.RoundNumber <= 1) return;
 
-            // 检查是否触发了能量获取
-            // 如果状态变为Active且回合数大于1，说明触发了
-            if (__instance.Owner.Creature.CombatState?.RoundNumber > 1)
+            bool anyAttacksPlayedLastTurn = GetPrivateField<bool>(__instance, "_anyAttacksPlayedLastTurn");
+            if (anyAttacksPlayedLastTurn) return;
+
+            __result.ContinueWith(_ =>
             {
-                // 通过检查私有字段判断是否触发
-                var anyAttacksPlayedLastTurn = GetPrivateField<bool>(__instance, "_anyAttacksPlayedLastTurn");
-                if (!anyAttacksPlayedLastTurn)
+                int energyAmount = __instance.DynamicVars.Energy.IntValue;
+                RelicStatsManager.RecordTrigger(__instance, RelicStatType.Energy, energyAmount);
+            });
+        }
+    }
+
+    /// <summary>
+    /// 双节棍 (Nunchaku) - 每打出10张攻击牌获得能量
+    /// </summary>
+    [HarmonyPatch(typeof(Nunchaku), nameof(Nunchaku.AfterCardPlayed))]
+    public static class Nunchaku_AfterCardPlayed_Patch
+    {
+        public static void Postfix(Nunchaku __instance, PlayerChoiceContext context, CardPlay cardPlay, Task __result)
+        {
+            if (cardPlay.Card.Owner != __instance.Owner || cardPlay.Card.Type != CardType.Attack) return;
+
+            int attacksPlayed = __instance.AttacksPlayed;
+            int cardsNeeded = __instance.DynamicVars.Cards.IntValue;
+
+            // 当计数归零时，说明刚刚触发了
+            if (attacksPlayed % cardsNeeded != 0 || !CombatManager.Instance.IsInProgress) return;
+
+            __result.ContinueWith(_ =>
+            {
+                int energyAmount = __instance.DynamicVars.Energy.IntValue;
+                RelicStatsManager.RecordTrigger(__instance, RelicStatType.Energy, energyAmount);
+            });
+        }
+    }
+
+    #endregion
+
+    #region 力量/敏捷类遗物
+
+    /// <summary>
+    /// 手里剑 (Shuriken) - 每打出3张攻击牌获得力量
+    /// </summary>
+    [HarmonyPatch(typeof(Shuriken), nameof(Shuriken.AfterCardPlayed))]
+    public static class Shuriken_AfterCardPlayed_Patch
+    {
+        public static void Postfix(Shuriken __instance, PlayerChoiceContext context, CardPlay cardPlay, Task __result)
+        {
+            if (cardPlay.Card.Owner != __instance.Owner ||
+                !CombatManager.Instance.IsInProgress ||
+                cardPlay.Card.Type != CardType.Attack)
+            {
+                return;
+            }
+
+            int attacksPlayedThisTurn = GetPrivateField<int>(__instance, "_attacksPlayedThisTurn");
+            int cardsNeeded = __instance.DynamicVars.Cards.IntValue;
+
+            // 当计数归零时，说明刚刚触发了
+            if (attacksPlayedThisTurn % cardsNeeded == 0)
+            {
+                __result.ContinueWith(_ =>
                 {
-                    int energyAmount = __instance.DynamicVars.Energy.IntValue;
-                    RelicStatsManager.RecordTrigger(__instance, RelicStatType.Energy, energyAmount);
-                }
+                    int strengthAmount = __instance.DynamicVars.Strength.IntValue;
+                    RelicStatsManager.RecordTrigger(__instance, RelicStatType.Strength, strengthAmount);
+                });
+            }
+        }
+    }
+
+    /// <summary>
+    /// 苦无 (Kunai) - 每打出3张攻击牌获得敏捷
+    /// </summary>
+    [HarmonyPatch(typeof(Kunai), nameof(Kunai.AfterCardPlayed))]
+    public static class Kunai_AfterCardPlayed_Patch
+    {
+        public static void Postfix(Kunai __instance, PlayerChoiceContext context, CardPlay cardPlay, Task __result)
+        {
+            if (cardPlay.Card.Owner != __instance.Owner ||
+                !CombatManager.Instance.IsInProgress ||
+                cardPlay.Card.Type != CardType.Attack)
+            {
+                return;
+            }
+
+            int attacksPlayedThisTurn = GetPrivateField<int>(__instance, "_attacksPlayedThisTurn");
+            int cardsNeeded = __instance.DynamicVars.Cards.IntValue;
+
+            // 当计数归零时，说明刚刚触发了
+            if (attacksPlayedThisTurn % cardsNeeded == 0)
+            {
+                __result.ContinueWith(_ =>
+                {
+                    int dexterityAmount = __instance.DynamicVars.Dexterity.IntValue;
+                    RelicStatsManager.RecordTrigger(__instance, RelicStatType.Dexterity, dexterityAmount);
+                });
+            }
+        }
+    }
+
+    #endregion
+
+    #region 抽牌类遗物
+
+    /// <summary>
+    /// 百年积木 (CentennialPuzzle) - 第一次受到伤害时抽牌
+    /// </summary>
+    [HarmonyPatch(typeof(CentennialPuzzle), nameof(CentennialPuzzle.AfterDamageReceived))]
+    public static class CentennialPuzzle_AfterDamageReceived_Patch
+    {
+        public static void Postfix(CentennialPuzzle __instance, PlayerChoiceContext choiceContext,
+            Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource, Task __result)
+        {
+            if (!CombatManager.Instance.IsInProgress ||
+                target != __instance.Owner.Creature ||
+                result.UnblockedDamage <= 0 ||
+                __instance.UsedThisCombat)
+            {
+                return;
+            }
+
+            __result.ContinueWith(_ =>
+            {
+                int cardsDrawn = __instance.DynamicVars.Cards.IntValue;
+                RelicStatsManager.RecordTrigger(__instance, RelicStatType.CardsDrawn, cardsDrawn);
+            });
+        }
+    }
+
+    #endregion
+
+    #region 易伤类遗物
+
+    /// <summary>
+    /// 弹珠袋 (BagOfMarbles) - 战斗开始时给予敌人易伤
+    /// </summary>
+    [HarmonyPatch(typeof(BagOfMarbles), nameof(BagOfMarbles.BeforeSideTurnStart))]
+    public static class BagOfMarbles_BeforeSideTurnStart_Patch
+    {
+        public static void Postfix(BagOfMarbles __instance, PlayerChoiceContext choiceContext,
+            CombatSide side, CombatState combatState, Task __result)
+        {
+            if (side != __instance.Owner.Creature.Side || combatState.RoundNumber > 1) return;
+
+            __result.ContinueWith(_ =>
+            {
+                int vulnerableAmount = __instance.DynamicVars.Vulnerable.IntValue;
+                int enemyCount = combatState.HittableEnemies.Count;
+                RelicStatsManager.RecordCustomStat(__instance, "vulnerable_applied", vulnerableAmount * enemyCount);
+            });
+        }
+    }
+
+    #endregion
+
+    #region 伤害类遗物
+
+    /// <summary>
+    /// 笔尖 (PenNib) - 每打出10张攻击牌，下一张攻击牌伤害翻倍
+    /// </summary>
+    [HarmonyPatch(typeof(PenNib), nameof(PenNib.BeforeCardPlayed))]
+    public static class PenNib_BeforeCardPlayed_Patch
+    {
+        public static void Postfix(PenNib __instance, CardPlay cardPlay)
+        {
+            if (cardPlay.Card.Type != CardType.Attack) return;
+            if (cardPlay.Card.Owner != __instance.Owner) return;
+
+            // 当 AttacksPlayed 刚刚归零时，说明触发了双倍伤害
+            if (__instance.AttacksPlayed == 0)
+            {
+                RelicStatsManager.RecordCustomStat(__instance, "double_damage_count", 1);
             }
         }
     }
@@ -311,105 +423,6 @@ public static class Patches
 
     #endregion
 
-    #region 百年谜题 (CentennialPuzzle) - 抽牌类遗物
-
-    /// <summary>
-    /// 追踪百年谜题（CentennialPuzzle）的触发
-    /// 第一次受到伤害时抽3张牌
-    /// </summary>
-    [HarmonyPatch(typeof(CentennialPuzzle), nameof(CentennialPuzzle.AfterDamageReceived))]
-    public static class CentennialPuzzle_AfterDamageReceived_Patch
-    {
-        public static void Postfix(CentennialPuzzle __instance, PlayerChoiceContext choiceContext,
-            Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
-        {
-            // 检查是否触发了抽牌
-            if (CombatManager.Instance.IsInProgress &&
-                target == __instance.Owner.Creature &&
-                result.UnblockedDamage > 0 &&
-                !__instance.UsedThisCombat)
-            {
-                int cardsDrawn = __instance.DynamicVars.Cards.IntValue;
-                RelicStatsManager.RecordTrigger(__instance, RelicStatType.CardsDrawn, cardsDrawn);
-            }
-        }
-    }
-
-    #endregion
-
-    #region 双节棍 (Nunchaku) - 能量类遗物
-
-    /// <summary>
-    /// 追踪双节棍（Nunchaku）的触发
-    /// 每打出10张攻击牌获得1点能量
-    /// </summary>
-    [HarmonyPatch(typeof(Nunchaku), nameof(Nunchaku.AfterCardPlayed))]
-    public static class Nunchaku_AfterCardPlayed_Patch
-    {
-        public static void Postfix(Nunchaku __instance, PlayerChoiceContext context, CardPlay cardPlay)
-        {
-            if (cardPlay.Card.Owner == __instance.Owner && cardPlay.Card.Type == CardType.Attack)
-            {
-                int attacksPlayed = __instance.DisplayAmount;
-
-                // 如果当前计数为0，说明刚刚触发了一次
-                if (attacksPlayed == 0 && CombatManager.Instance.IsInProgress)
-                {
-                    int energyAmount = __instance.DynamicVars.Energy.IntValue;
-                    RelicStatsManager.RecordTrigger(__instance, RelicStatType.Energy, energyAmount);
-                }
-            }
-        }
-    }
-
-    #endregion
-
-    #region 弹珠袋 (BagOfMarbles) - 易伤类遗物
-
-    /// <summary>
-    /// 追踪弹珠袋（BagOfMarbles）的触发
-    /// 战斗开始时给予所有敌人1层易伤
-    /// </summary>
-    [HarmonyPatch(typeof(BagOfMarbles), nameof(BagOfMarbles.BeforeSideTurnStart))]
-    public static class BagOfMarbles_BeforeSideTurnStart_Patch
-    {
-        public static void Postfix(BagOfMarbles __instance, PlayerChoiceContext choiceContext,
-            CombatSide side, CombatState combatState)
-        {
-            // 只在第一回合且是玩家方时记录
-            if (side == __instance.Owner.Creature.Side && combatState.RoundNumber <= 1)
-            {
-                int vulnerableAmount = __instance.DynamicVars.Vulnerable.IntValue;
-                RelicStatsManager.RecordCustomStat(__instance, "vulnerable_applied", vulnerableAmount);
-            }
-        }
-    }
-
-    #endregion
-
-    #region 笔尖 (PenNib) - 伤害类遗物
-
-    /// <summary>
-    /// 追踪笔尖（PenNib）的触发
-    /// 每打出10张攻击牌，下一张攻击牌伤害翻倍
-    /// </summary>
-    [HarmonyPatch(typeof(PenNib), nameof(PenNib.ModifyDamageMultiplicative))]
-    public static class PenNib_ModifyDamageMultiplicative_Patch
-    {
-        public static void Postfix(PenNib __instance, Creature? target, decimal amount, ValueProp props,
-            Creature? dealer, CardModel? cardSource, ref decimal __result)
-        {
-            // 如果返回2，说明伤害翻倍了
-            if (__result == 2m && cardSource != null)
-            {
-                // 记录一次双倍伤害触发
-                RelicStatsManager.RecordCustomStat(__instance, "double_damage_count", 1);
-            }
-        }
-    }
-
-    #endregion
-
     #region 数据持久化
 
     /// <summary>
@@ -420,7 +433,6 @@ public static class Patches
     {
         public static void Postfix(RelicModel __instance, SerializableRelic __result)
         {
-            // 将统计数据保存到 SerializableRelic.Props
             __result.Props ??= new SavedProperties();
             RelicStatsManager.SaveStatsToSavedProperties(__instance, __result.Props);
         }
@@ -434,7 +446,6 @@ public static class Patches
     {
         public static void Postfix(SerializableRelic save, RelicModel __result)
         {
-            // 从 SerializableRelic.Props 加载统计数据到运行时缓存
             if (save.Props != null)
             {
                 RelicStatsManager.LoadStatsToRuntime(__result, save.Props);
