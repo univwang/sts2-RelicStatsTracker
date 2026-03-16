@@ -9,57 +9,69 @@ namespace RelicStatsTracker;
 /// </summary>
 public class RelicStatsProperties
 {
-    /// <summary>
-    /// 触发次数
-    /// </summary>
+    // 基础统计
     [SavedProperty]
     public int RelicStatsTriggerCount { get; set; }
 
-    /// <summary>
-    /// 总治疗量
-    /// </summary>
     [SavedProperty]
     public int RelicStatsTotalHeal { get; set; }
 
-    /// <summary>
-    /// 总伤害量
-    /// </summary>
     [SavedProperty]
     public int RelicStatsTotalDamage { get; set; }
 
-    /// <summary>
-    /// 总格挡量
-    /// </summary>
     [SavedProperty]
     public int RelicStatsTotalBlock { get; set; }
 
-    /// <summary>
-    /// 总能量获取
-    /// </summary>
     [SavedProperty]
     public int RelicStatsTotalEnergy { get; set; }
 
-    /// <summary>
-    /// 力量获取次数
-    /// </summary>
     [SavedProperty]
     public int RelicStatsStrength { get; set; }
 
-    /// <summary>
-    /// 敏捷获取次数
-    /// </summary>
     [SavedProperty]
     public int RelicStatsDexterity { get; set; }
 
-    /// <summary>
-    /// 抽牌数量
-    /// </summary>
     [SavedProperty]
     public int RelicStatsCardsDrawn { get; set; }
 
-    /// <summary>
-    /// 自定义统计数据（JSON 格式）
-    /// </summary>
+    // 新增统计
+    [SavedProperty]
+    public int RelicStatsVigor { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsFocus { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsPlating { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsForge { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsStars { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsMaxHp { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsOrbs { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsSummons { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsBlockDoubled { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsCardsUpgraded { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsCardsObtained { get; set; }
+
+    [SavedProperty]
+    public int RelicStatsGold { get; set; }
+
+    // 自定义统计数据（JSON 格式）
     [SavedProperty]
     public string? RelicStatsCustom { get; set; }
 }

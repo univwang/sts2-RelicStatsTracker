@@ -15,18 +15,33 @@
 
 ## 支持的遗物
 
+### 召唤类（骷髅人相关）
+| 遗物 | 追踪数据 |
+|------|----------|
+| 缚魂命匣 (BoundPhylactery) | 召唤次数 |
+| 无界命匣 (PhylacteryUnbound) | 召唤次数 |
+| 骨笛 (BoneFlute) | 格挡量 |
+| 异鸟宝宝 (Byrdpip) | 召唤次数 |
+| Paels Legion | 格挡翻倍次数 |
+
 ### 治疗类
 | 遗物 | 追踪数据 |
 |------|----------|
 | 燃烧之血 (BurningBlood) | 触发次数、总治疗量 |
 | 黑血 (BlackBlood) | 触发次数、总治疗量 |
 | 小血瓶 (BloodVial) | 触发次数、总治疗量 |
+| 放大镜 (Pantograph) | 触发次数、总治疗量 |
+| 永恒羽毛 (EternalFeather) | 触发次数、总治疗量 |
+| 黑石护符 (DarkstonePeriapt) | 触发次数、最大生命值 |
 
 ### 格挡类
 | 遗物 | 追踪数据 |
 |------|----------|
 | 锚 (Anchor) | 触发次数、总格挡量 |
 | 华丽扇 (OrnamentalFan) | 触发次数、总格挡量 |
+| 奥利哈钢 (Orichalcum) | 触发次数、总格挡量 |
+| 船夹板 (HornCleat) | 触发次数、总格挡量 |
+| 斗篷扣 (CloakClasp) | 触发次数、总格挡量 |
 
 ### 能量类
 | 遗物 | 追踪数据 |
@@ -34,6 +49,8 @@
 | 提灯 (Lantern) | 触发次数、总能量 |
 | 孙子兵法 (ArtOfWar) | 触发次数、总能量 |
 | 双节棍 (Nunchaku) | 触发次数、总能量 |
+| 开心小花 (HappyFlower) | 触发次数、总能量 |
+| 地精之角 (GremlinHorn) | 触发次数、总能量、抽牌数 |
 
 ### 属性类
 | 遗物 | 追踪数据 |
@@ -41,12 +58,33 @@
 | 手里剑 (Shuriken) | 触发次数、获得力量 |
 | 苦无 (Kunai) | 触发次数、获得敏捷 |
 
-### 其他
+### 伤害类
+| 遗物 | 追踪数据 |
+|------|----------|
+| 水银沙漏 (MercuryHourglass) | 触发次数、总伤害量 |
+| 开信刀 (LetterOpener) | 触发次数、总伤害量 |
+| 笔尖 (PenNib) | 触发次数、双倍伤害次数 |
+| 弹珠袋 (BagOfMarbles) | 触发次数、施加易伤 |
+
+### 抽牌类
 | 遗物 | 追踪数据 |
 |------|----------|
 | 百年谜题 (CentennialPuzzle) | 触发次数、抽牌数 |
-| 笔尖 (PenNib) | 触发次数、双倍伤害次数 |
-| 弹珠袋 (BagOfMarbles) | 触发次数、施加易伤 |
+| 准备背包 (BagOfPreparation) | 触发次数、抽牌数 |
+
+### 球类
+| 遗物 | 追踪数据 |
+|------|----------|
+| 破损核心 (CrackedCore) | 触发次数、引导球数 |
+| 注能核心 (InfusedCore) | 触发次数、引导球数 |
+| 数据磁盘 (DataDisk) | 触发次数、集中值 |
+
+### 其他
+| 遗物 | 追踪数据 |
+|------|----------|
+| 赤牛 (Akabeko) | 触发次数、活力值 |
+| 护喉甲 (Gorget) | 触发次数、覆甲值 |
+| 击剑指南 (FencingManual) | 触发次数、铸造值 |
 
 ## 安装
 
@@ -95,7 +133,21 @@ RelicStatsTracker/
 ├── RelicStatsManager.cs     # 统计数据管理器
 ├── RelicStatsProperties.cs  # 属性注册类（用于持久化）
 ├── Localization.cs          # 本地化支持
-├── Patches.cs               # Harmony Patches
+├── Patches/                 # Harmony Patches（按类别分文件夹）
+│   ├── PatchHelper.cs       # 辅助方法
+│   ├── Core/                # 核心功能
+│   │   ├── HoverTipPatch.cs
+│   │   └── RunResetPatch.cs
+│   ├── Summon/              # 召唤类遗物
+│   ├── Healing/             # 治疗类遗物
+│   ├── Block/               # 格挡类遗物
+│   ├── Energy/              # 能量类遗物
+│   ├── Damage/              # 伤害类遗物
+│   ├── Card/                # 抽牌类遗物
+│   ├── Attribute/           # 属性类遗物
+│   ├── Orb/                 # 球类遗物
+│   ├── Misc/                # 其他遗物
+│   └── Persistence/         # 数据持久化
 ├── mod_manifest.json        # Mod 清单
 ├── project.godot            # Godot 项目配置
 └── RelicStatsTracker/       # 打包资源目录
@@ -123,6 +175,18 @@ RelicStatsTracker/
   "stats.strength_gained": "[color=red]Strength Gained: {0}[/color]",
   "stats.dexterity_gained": "[color=blue]Dexterity Gained: {0}[/color]",
   "stats.cards_drawn": "[color=white]Cards Drawn: {0}[/color]",
+  "stats.total_vigor": "[color=orange]Total Vigor: {0}[/color]",
+  "stats.total_focus": "[color=purple]Total Focus: {0}[/color]",
+  "stats.total_plating": "[color=gray]Total Plating: {0}[/color]",
+  "stats.total_forge": "[color=orange]Total Forge: {0}[/color]",
+  "stats.total_stars": "[color=yellow]Total Stars: {0}[/color]",
+  "stats.total_max_hp": "[color=green]Max HP Gained: {0}[/color]",
+  "stats.orbs_channeled": "[color=cyan]Orbs Channeled: {0}[/color]",
+  "stats.summons_count": "[color=purple]Summons: {0}[/color]",
+  "stats.block_doubled": "[color=blue]Block Doubled: {0}[/color]",
+  "stats.cards_upgraded": "[color=yellow]Cards Upgraded: {0}[/color]",
+  "stats.cards_obtained": "[color=white]Cards Obtained: {0}[/color]",
+  "stats.gold_gained": "[color=gold]Gold Gained: {0}[/color]",
   "stats.double_damage": "[color=orange]Double Damage: {0}[/color]",
   "stats.vulnerable_applied": "[color=orange]Vulnerable Applied: {0}[/color]"
 }
@@ -153,6 +217,9 @@ RelicStatsTracker/
 | `[color=yellow]...[/color]` | 黄色文本 |
 | `[color=cyan]...[/color]` | 青色文本 |
 | `[color=orange]...[/color]` | 橙色文本 |
+| `[color=purple]...[/color]` | 紫色文本 |
+| `[color=gray]...[/color]` | 灰色文本 |
+| `[color=gold]...[/color]` | 金色文本 |
 | `[b]...[/b]` | 粗体 |
 | `{0}` | 参数占位符 |
 
@@ -168,22 +235,6 @@ RelicStatsTracker/
 2. **运行时注入**：在 Mod 初始化时调用 `SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(RelicStatsProperties))`
 3. **序列化 Patch**：Patch `RelicModel.ToSerializable()` 方法，在序列化时保存统计数据
 4. **反序列化 Patch**：Patch `RelicModel.FromSerializable()` 方法，在加载时恢复统计数据
-
-```csharp
-// 属性注册类
-public class RelicStatsProperties
-{
-    [SavedProperty]
-    public int RelicStatsTriggerCount { get; set; }
-
-    [SavedProperty]
-    public int RelicStatsTotalHeal { get; set; }
-    // ...
-}
-
-// Mod 初始化时注册
-SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(RelicStatsProperties));
-```
 
 ### 悬浮提示增强
 
@@ -207,75 +258,82 @@ public static class RelicModelHoverTipPatch
 
 ### 遗物触发追踪
 
-通过 Patch 各遗物的触发方法来记录统计数据：
+通过 Patch 各遗物的触发方法来记录统计数据。Patch 文件按遗物类别分文件夹组织：
 
-```csharp
-[HarmonyPatch(typeof(BurningBlood), nameof(BurningBlood.AfterCombatVictory))]
-public static class BurningBloodAfterCombatVictoryPatch
-{
-    public static void Postfix(BurningBlood __instance, CombatRoom _, Task __result)
-    {
-        __result.ContinueWith(_ =>
-        {
-            int actualHeal = __instance.Owner.Creature.CurrentHp - _hpBeforeHeal;
-            if (actualHeal > 0)
-            {
-                RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, actualHeal);
-            }
-        });
-    }
-}
-```
+- `Summon/` - 召唤类遗物（骷髅人相关）
+- `Healing/` - 治疗类遗物
+- `Block/` - 格挡类遗物
+- `Energy/` - 能量类遗物
+- `Damage/` - 伤害类遗物
+- `Card/` - 抽牌类遗物
+- `Attribute/` - 属性类遗物（力量、敏捷等）
+- `Orb/` - 球类遗物
+- `Misc/` - 其他遗物
 
 ## 扩展指南
 
 ### 添加新遗物追踪
 
-1. 在 `Patches.cs` 中添加新的 Patch 类（使用驼峰命名法）：
+1. 确定遗物类别，在对应的 `Patches/` 子目录下添加或修改 Patch 文件
+
+2. 使用驼峰命名法创建 Patch 类：
 
 ```csharp
 [HarmonyPatch(typeof(YourRelic), nameof(YourRelic.TriggerMethod))]
 public static class YourRelicTriggerMethodPatch
 {
-    public static void Postfix(YourRelic __instance, ...)
+    public static void Postfix(YourRelic __instance, ..., Task __result)
     {
-        RelicStatsManager.RecordTrigger(__instance, RelicStatType.YourStatType, amount);
+        __result.ContinueWith(_ =>
+        {
+            RelicStatsManager.RecordTrigger(__instance, RelicStatType.YourStatType, amount);
+        });
     }
 }
 ```
 
-2. 如果需要新的统计类型，在 `RelicStatsData.cs` 中添加字段，在 `RelicStatType` 枚举中添加类型。
+3. 如果需要新的统计类型：
+   - 在 `RelicStatsData.cs` 中添加字段
+   - 在 `RelicStatType` 枚举中添加类型
+   - 在 `RelicStatsManager.cs` 的 `ApplyStatType` 方法中添加处理
+   - 在 `Localization.cs` 的 `Keys` 类中添加键名
+   - 在 `BuildStatsText` 方法中添加显示逻辑
+   - 在本地化文件中添加翻译
 
-3. 如果需要新的持久化属性，在 `RelicStatsProperties.cs` 中添加属性。
+### 治疗类遗物注意事项
 
-4. 在本地化文件中添加对应的文本。
-
-### 添加新的本地化键
-
-1. 在 `Localization.cs` 的 `Keys` 类中添加新键：
+治疗类遗物需要使用前后生命值差值计算实际治疗量，以排除溢出：
 
 ```csharp
-public static class Keys
+private static int _hpBeforeHeal;
+
+public static void Prefix(RelicModel __instance)
 {
-    // ...
-    public const string NewStat = "stats.new_stat";
+    _hpBeforeHeal = __instance.Owner.Creature.CurrentHp;
+}
+
+public static void Postfix(RelicModel __instance, Task __result)
+{
+    __result.ContinueWith(_ =>
+    {
+        int actualHeal = __instance.Owner.Creature.CurrentHp - _hpBeforeHeal;
+        if (actualHeal > 0)
+            RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, actualHeal);
+    });
 }
 ```
 
-2. 在 `BuildStatsText` 方法中使用新键：
+### 计数触发类遗物
+
+对于每 N 次触发一次效果的遗物（如 Shuriken、Nunchaku），检查计数器是否归零：
 
 ```csharp
-if (stats.NewStat > 0)
-{
-    lines.Add(GetText(Keys.NewStat, stats.NewStat));
-}
-```
+int counter = GetPrivateField<int>(__instance, "_attacksPlayedThisTurn");
+int threshold = __instance.DynamicVars.Cards.IntValue;
 
-3. 在所有本地化文件中添加翻译：
-
-```json
+if (counter % threshold == 0) // 刚刚触发
 {
-  "stats.new_stat": "[color=purple]New Stat: {0}[/color]"
+    RelicStatsManager.RecordTrigger(__instance, statType, amount);
 }
 ```
 

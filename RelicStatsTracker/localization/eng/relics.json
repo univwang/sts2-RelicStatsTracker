@@ -8,6 +8,18 @@
   "stats.strength_gained": "[color=red]Strength Gained: {0}[/color]",
   "stats.dexterity_gained": "[color=blue]Dexterity Gained: {0}[/color]",
   "stats.cards_drawn": "[color=white]Cards Drawn: {0}[/color]",
+  "stats.total_vigor": "[color=orange]Total Vigor: {0}[/color]",
+  "stats.total_focus": "[color=purple]Total Focus: {0}[/color]",
+  "stats.total_plating": "[color=gray]Total Plating: {0}[/color]",
+  "stats.total_forge": "[color=orange]Total Forge: {0}[/color]",
+  "stats.total_stars": "[color=yellow]Total Stars: {0}[/color]",
+  "stats.total_max_hp": "[color=green]Max HP Gained: {0}[/color]",
+  "stats.orbs_channeled": "[color=cyan]Orbs Channeled: {0}[/color]",
+  "stats.summons_count": "[color=purple]Summons: {0}[/color]",
+  "stats.block_doubled": "[color=blue]Block Doubled: {0}[/color]",
+  "stats.cards_upgraded": "[color=yellow]Cards Upgraded: {0}[/color]",
+  "stats.cards_obtained": "[color=white]Cards Obtained: {0}[/color]",
+  "stats.gold_gained": "[color=gold]Gold Gained: {0}[/color]",
   "stats.double_damage": "[color=orange]Double Damage: {0}[/color]",
   "stats.vulnerable_applied": "[color=orange]Vulnerable Applied: {0}[/color]"
 }

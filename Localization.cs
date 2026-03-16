@@ -16,6 +16,7 @@ public static class Localization
     /// </summary>
     public static class Keys
     {
+        // 基础统计
         public const string TriggerCount = "stats.trigger_count";
         public const string TotalHeal = "stats.total_heal";
         public const string TotalDamage = "stats.total_damage";
@@ -24,7 +25,25 @@ public static class Localization
         public const string StrengthGained = "stats.strength_gained";
         public const string DexterityGained = "stats.dexterity_gained";
         public const string CardsDrawn = "stats.cards_drawn";
+
+        // 新增统计
+        public const string TotalVigor = "stats.total_vigor";
+        public const string TotalFocus = "stats.total_focus";
+        public const string TotalPlating = "stats.total_plating";
+        public const string TotalForge = "stats.total_forge";
+        public const string TotalStars = "stats.total_stars";
+        public const string TotalMaxHp = "stats.total_max_hp";
+        public const string OrbsChanneled = "stats.orbs_channeled";
+        public const string SummonsCount = "stats.summons_count";
+        public const string BlockDoubled = "stats.block_doubled";
+        public const string CardsUpgraded = "stats.cards_upgraded";
+        public const string CardsObtained = "stats.cards_obtained";
+        public const string GoldGained = "stats.gold_gained";
+
+        // 标题
         public const string StatsHeader = "stats.header";
+
+        // 自定义统计
         public const string DoubleDamage = "stats.double_damage";
         public const string VulnerableApplied = "stats.vulnerable_applied";
     }
@@ -111,6 +130,78 @@ public static class Localization
         if (stats.CardsDrawn > 0)
         {
             lines.Add(GetText(Keys.CardsDrawn, stats.CardsDrawn));
+        }
+
+        // 活力值
+        if (stats.TotalVigorGained > 0)
+        {
+            lines.Add(GetText(Keys.TotalVigor, stats.TotalVigorGained));
+        }
+
+        // 集中值
+        if (stats.TotalFocusGained > 0)
+        {
+            lines.Add(GetText(Keys.TotalFocus, stats.TotalFocusGained));
+        }
+
+        // 覆甲值
+        if (stats.TotalPlatingGained > 0)
+        {
+            lines.Add(GetText(Keys.TotalPlating, stats.TotalPlatingGained));
+        }
+
+        // 铸造值
+        if (stats.TotalForgeGained > 0)
+        {
+            lines.Add(GetText(Keys.TotalForge, stats.TotalForgeGained));
+        }
+
+        // 星星值
+        if (stats.TotalStarsGained > 0)
+        {
+            lines.Add(GetText(Keys.TotalStars, stats.TotalStarsGained));
+        }
+
+        // 最大生命值
+        if (stats.TotalMaxHpGained > 0)
+        {
+            lines.Add(GetText(Keys.TotalMaxHp, stats.TotalMaxHpGained));
+        }
+
+        // 引导球
+        if (stats.OrbsChanneled > 0)
+        {
+            lines.Add(GetText(Keys.OrbsChanneled, stats.OrbsChanneled));
+        }
+
+        // 召唤次数
+        if (stats.SummonsCount > 0)
+        {
+            lines.Add(GetText(Keys.SummonsCount, stats.SummonsCount));
+        }
+
+        // 格挡翻倍
+        if (stats.BlockDoubledCount > 0)
+        {
+            lines.Add(GetText(Keys.BlockDoubled, stats.BlockDoubledCount));
+        }
+
+        // 升级卡牌
+        if (stats.CardsUpgraded > 0)
+        {
+            lines.Add(GetText(Keys.CardsUpgraded, stats.CardsUpgraded));
+        }
+
+        // 获得卡牌
+        if (stats.CardsObtained > 0)
+        {
+            lines.Add(GetText(Keys.CardsObtained, stats.CardsObtained));
+        }
+
+        // 金币
+        if (stats.GoldGained > 0)
+        {
+            lines.Add(GetText(Keys.GoldGained, stats.GoldGained));
         }
 
         // 自定义统计数据

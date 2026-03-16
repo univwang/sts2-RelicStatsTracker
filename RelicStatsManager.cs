@@ -57,6 +57,32 @@ public static class RelicStatsManager
         var stats = GetStats(relic);
         stats.TriggerCount++;
 
+        ApplyStatType(stats, statType, amount);
+
+        LogStats(relic, stats);
+    }
+
+    /// <summary>
+    /// 记录多种统计数据
+    /// </summary>
+    public static void RecordTrigger(RelicModel relic, Dictionary<RelicStatType, int> statsToUpdate)
+    {
+        var stats = GetStats(relic);
+        stats.TriggerCount++;
+
+        foreach (var kvp in statsToUpdate)
+        {
+            ApplyStatType(stats, kvp.Key, kvp.Value);
+        }
+
+        LogStats(relic, stats);
+    }
+
+    /// <summary>
+    /// 应用统计类型到数据
+    /// </summary>
+    private static void ApplyStatType(RelicStatsData stats, RelicStatType statType, int amount)
+    {
         switch (statType)
         {
             case RelicStatType.Heal:
@@ -80,48 +106,43 @@ public static class RelicStatsManager
             case RelicStatType.CardsDrawn:
                 stats.CardsDrawn += amount;
                 break;
+            case RelicStatType.Vigor:
+                stats.TotalVigorGained += amount;
+                break;
+            case RelicStatType.Focus:
+                stats.TotalFocusGained += amount;
+                break;
+            case RelicStatType.Plating:
+                stats.TotalPlatingGained += amount;
+                break;
+            case RelicStatType.Forge:
+                stats.TotalForgeGained += amount;
+                break;
+            case RelicStatType.Stars:
+                stats.TotalStarsGained += amount;
+                break;
+            case RelicStatType.MaxHp:
+                stats.TotalMaxHpGained += amount;
+                break;
+            case RelicStatType.OrbChanneled:
+                stats.OrbsChanneled += amount;
+                break;
+            case RelicStatType.Summon:
+                stats.SummonsCount += amount;
+                break;
+            case RelicStatType.BlockDoubled:
+                stats.BlockDoubledCount += amount;
+                break;
+            case RelicStatType.CardsUpgraded:
+                stats.CardsUpgraded += amount;
+                break;
+            case RelicStatType.CardsObtained:
+                stats.CardsObtained += amount;
+                break;
+            case RelicStatType.Gold:
+                stats.GoldGained += amount;
+                break;
         }
-
-        LogStats(relic, stats);
-    }
-
-    /// <summary>
-    /// 记录多种统计数据
-    /// </summary>
-    public static void RecordTrigger(RelicModel relic, Dictionary<RelicStatType, int> statsToUpdate)
-    {
-        var stats = GetStats(relic);
-        stats.TriggerCount++;
-
-        foreach (var kvp in statsToUpdate)
-        {
-            switch (kvp.Key)
-            {
-                case RelicStatType.Heal:
-                    stats.TotalHealAmount += kvp.Value;
-                    break;
-                case RelicStatType.Damage:
-                    stats.TotalDamageAmount += kvp.Value;
-                    break;
-                case RelicStatType.Block:
-                    stats.TotalBlockAmount += kvp.Value;
-                    break;
-                case RelicStatType.Energy:
-                    stats.TotalEnergyGained += kvp.Value;
-                    break;
-                case RelicStatType.Strength:
-                    stats.StrengthGained += kvp.Value;
-                    break;
-                case RelicStatType.Dexterity:
-                    stats.DexterityGained += kvp.Value;
-                    break;
-                case RelicStatType.CardsDrawn:
-                    stats.CardsDrawn += kvp.Value;
-                    break;
-            }
-        }
-
-        LogStats(relic, stats);
     }
 
     /// <summary>
@@ -182,44 +203,64 @@ public static class RelicStatsManager
         props.ints ??= new List<SavedProperties.SavedProperty<int>>();
 
         if (stats.TriggerCount > 0)
-        {
             props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsTriggerCount", stats.TriggerCount));
-        }
 
         if (stats.TotalHealAmount > 0)
-        {
             props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsTotalHeal", stats.TotalHealAmount));
-        }
 
         if (stats.TotalDamageAmount > 0)
-        {
             props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsTotalDamage", stats.TotalDamageAmount));
-        }
 
         if (stats.TotalBlockAmount > 0)
-        {
             props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsTotalBlock", stats.TotalBlockAmount));
-        }
 
         if (stats.TotalEnergyGained > 0)
-        {
             props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsTotalEnergy", stats.TotalEnergyGained));
-        }
 
         if (stats.StrengthGained > 0)
-        {
             props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsStrength", stats.StrengthGained));
-        }
 
         if (stats.DexterityGained > 0)
-        {
             props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsDexterity", stats.DexterityGained));
-        }
 
         if (stats.CardsDrawn > 0)
-        {
             props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsCardsDrawn", stats.CardsDrawn));
-        }
+
+        if (stats.TotalVigorGained > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsVigor", stats.TotalVigorGained));
+
+        if (stats.TotalFocusGained > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsFocus", stats.TotalFocusGained));
+
+        if (stats.TotalPlatingGained > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsPlating", stats.TotalPlatingGained));
+
+        if (stats.TotalForgeGained > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsForge", stats.TotalForgeGained));
+
+        if (stats.TotalStarsGained > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsStars", stats.TotalStarsGained));
+
+        if (stats.TotalMaxHpGained > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsMaxHp", stats.TotalMaxHpGained));
+
+        if (stats.OrbsChanneled > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsOrbs", stats.OrbsChanneled));
+
+        if (stats.SummonsCount > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsSummons", stats.SummonsCount));
+
+        if (stats.BlockDoubledCount > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsBlockDoubled", stats.BlockDoubledCount));
+
+        if (stats.CardsUpgraded > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsCardsUpgraded", stats.CardsUpgraded));
+
+        if (stats.CardsObtained > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsCardsObtained", stats.CardsObtained));
+
+        if (stats.GoldGained > 0)
+            props.ints.Add(new SavedProperties.SavedProperty<int>("RelicStatsGold", stats.GoldGained));
 
         // 自定义统计数据序列化为 JSON
         if (stats.CustomStats.Count > 0)
@@ -276,6 +317,54 @@ public static class RelicStatsManager
                         break;
                     case "RelicStatsCardsDrawn":
                         stats.CardsDrawn = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsVigor":
+                        stats.TotalVigorGained = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsFocus":
+                        stats.TotalFocusGained = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsPlating":
+                        stats.TotalPlatingGained = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsForge":
+                        stats.TotalForgeGained = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsStars":
+                        stats.TotalStarsGained = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsMaxHp":
+                        stats.TotalMaxHpGained = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsOrbs":
+                        stats.OrbsChanneled = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsSummons":
+                        stats.SummonsCount = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsBlockDoubled":
+                        stats.BlockDoubledCount = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsCardsUpgraded":
+                        stats.CardsUpgraded = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsCardsObtained":
+                        stats.CardsObtained = prop.value;
+                        found = true;
+                        break;
+                    case "RelicStatsGold":
+                        stats.GoldGained = prop.value;
                         found = true;
                         break;
                 }

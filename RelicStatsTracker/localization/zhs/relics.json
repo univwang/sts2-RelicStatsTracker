@@ -1,5 +1,5 @@
 {
-  "stats.header": "\n——遗物统计——",
+  "stats.header": "\n——统计——",
   "stats.trigger_count": "[color=yellow]触发次数: {0}[/color]",
   "stats.total_heal": "[color=green]总治疗量: {0}[/color]",
   "stats.total_damage": "[color=red]总伤害量: {0}[/color]",
@@ -8,6 +8,18 @@
   "stats.strength_gained": "[color=red]获得力量: {0}[/color]",
   "stats.dexterity_gained": "[color=blue]获得敏捷: {0}[/color]",
   "stats.cards_drawn": "[color=white]抽牌数: {0}[/color]",
+  "stats.total_vigor": "[color=orange]活力值: {0}[/color]",
+  "stats.total_focus": "[color=purple]集中值: {0}[/color]",
+  "stats.total_plating": "[color=gray]覆甲值: {0}[/color]",
+  "stats.total_forge": "[color=orange]铸造值: {0}[/color]",
+  "stats.total_stars": "[color=yellow]星星值: {0}[/color]",
+  "stats.total_max_hp": "[color=green]最大生命值: {0}[/color]",
+  "stats.orbs_channeled": "[color=cyan]引导球数: {0}[/color]",
+  "stats.summons_count": "[color=purple]召唤次数: {0}[/color]",
+  "stats.block_doubled": "[color=blue]格挡翻倍: {0}次[/color]",
+  "stats.cards_upgraded": "[color=yellow]升级卡牌: {0}张[/color]",
+  "stats.cards_obtained": "[color=white]获得卡牌: {0}张[/color]",
+  "stats.gold_gained": "[color=gold]获得金币: {0}[/color]",
   "stats.double_damage": "[color=orange]双倍伤害: {0}次[/color]",
   "stats.vulnerable_applied": "[color=orange]施加易伤: {0}层[/color]"
 }
