@@ -16,129 +16,43 @@ public static class Localization
     /// </summary>
     public static class Keys
     {
-        public const string TriggerCount = "trigger_count";
-        public const string TotalHeal = "total_heal";
-        public const string TotalDamage = "total_damage";
-        public const string TotalBlock = "total_block";
-        public const string TotalEnergy = "total_energy";
-        public const string StrengthGained = "strength_gained";
-        public const string DexterityGained = "dexterity_gained";
-        public const string CardsDrawn = "cards_drawn";
+        public const string TriggerCount = "stats.trigger_count";
+        public const string TotalHeal = "stats.total_heal";
+        public const string TotalDamage = "stats.total_damage";
+        public const string TotalBlock = "stats.total_block";
+        public const string TotalEnergy = "stats.total_energy";
+        public const string StrengthGained = "stats.strength_gained";
+        public const string DexterityGained = "stats.dexterity_gained";
+        public const string CardsDrawn = "stats.cards_drawn";
         public const string StatsHeader = "stats.header";
-        // 自定义统计
-        public const string DoubleDamageCount = "double_damage_count";
-        public const string VulnerableApplied = "vulnerable_applied";
+        public const string DoubleDamage = "stats.double_damage";
+        public const string VulnerableApplied = "stats.vulnerable_applied";
     }
-
-    /// <summary>
-    /// 默认本地化文本（英文）
-    /// </summary>
-    private static readonly Dictionary<string, string> EnglishTexts = new()
-    {
-        { Keys.TriggerCount, "[color=yellow]Triggered: {0}[/color]" },
-        { Keys.TotalHeal, "[color=green]Total Heal: {0}[/color]" },
-        { Keys.TotalDamage, "[color=red]Total Damage: {0}[/color]" },
-        { Keys.TotalBlock, "[color=blue]Total Block: {0}[/color]" },
-        { Keys.TotalEnergy, "[color=cyan]Total Energy: {0}[/color]" },
-        { Keys.StrengthGained, "[color=red]Strength Gained: {0}[/color]" },
-        { Keys.DexterityGained, "[color=blue]Dexterity Gained: {0}[/color]" },
-        { Keys.CardsDrawn, "[color=white]Cards Drawn: {0}[/color]" },
-        { Keys.StatsHeader, "\n\n[b]--- Stats ---[/b]" },
-        { Keys.DoubleDamageCount, "[color=orange]Double Damage: {0}[/color]" },
-        { Keys.VulnerableApplied, "[color=orange]Vulnerable Applied: {0}[/color]" }
-    };
-
-    /// <summary>
-    /// 中文本地化文本
-    /// </summary>
-    private static readonly Dictionary<string, string> ChineseTexts = new()
-    {
-        { Keys.TriggerCount, "[color=yellow]触发次数: {0}[/color]" },
-        { Keys.TotalHeal, "[color=green]总治疗量: {0}[/color]" },
-        { Keys.TotalDamage, "[color=red]总伤害量: {0}[/color]" },
-        { Keys.TotalBlock, "[color=blue]总格挡量: {0}[/color]" },
-        { Keys.TotalEnergy, "[color=cyan]总能量: {0}[/color]" },
-        { Keys.StrengthGained, "[color=red]获得力量: {0}[/color]" },
-        { Keys.DexterityGained, "[color=blue]获得敏捷: {0}[/color]" },
-        { Keys.CardsDrawn, "[color=white]抽牌数: {0}[/color]" },
-        { Keys.StatsHeader, "\n\n[b]--- 统计 ---[/b]" },
-        { Keys.DoubleDamageCount, "[color=orange]双倍伤害: {0}次[/color]" },
-        { Keys.VulnerableApplied, "[color=orange]施加易伤: {0}层[/color]" }
-    };
 
     /// <summary>
     /// 获取本地化文本
     /// </summary>
     public static string GetText(string key, params object[] args)
     {
-        // 尝试从游戏本地化系统获取
-        if (TryGetGameLocalization(key, out string? gameText))
-        {
-            return string.Format(gameText, args);
-        }
-
-        // 根据当前语言选择默认文本
-        var texts = GetCurrentLanguageTexts();
-        if (texts.TryGetValue(key, out string? text))
-        {
-            return string.Format(text, args);
-        }
-
-        // 返回键名作为后备
-        return $"{key}: {string.Join(", ", args)}";
-    }
-
-    /// <summary>
-    /// 尝试从游戏本地化系统获取文本
-    /// </summary>
-    private static bool TryGetGameLocalization(string key, out string? text)
-    {
-        text = null;
         try
         {
             var locString = LocString.GetIfExists(LocTable, key);
             if (locString != null)
             {
-                text = locString.GetFormattedText();
-                return !string.IsNullOrEmpty(text);
+                var rawText = locString.GetRawText();
+                if (!string.IsNullOrEmpty(rawText))
+                {
+                    return string.Format(rawText, args);
+                }
             }
         }
         catch
         {
             // 忽略本地化获取失败
         }
-        return false;
-    }
 
-    /// <summary>
-    /// 获取当前语言的文本字典
-    /// </summary>
-    private static Dictionary<string, string> GetCurrentLanguageTexts()
-    {
-        // 检查当前语言设置
-        var currentLang = GetCurrentLanguage();
-        return currentLang switch
-        {
-            "zhs" or "zht" or "chi" => ChineseTexts,
-            _ => EnglishTexts
-        };
-    }
-
-    /// <summary>
-    /// 获取当前语言代码
-    /// </summary>
-    private static string GetCurrentLanguage()
-    {
-        try
-        {
-            // 尝试从游戏获取当前语言
-            var locale = LocManager.Instance?.Language;
-            return locale ?? "eng";
-        }
-        catch
-        {
-            return "eng";
-        }
+        // 返回键名作为后备
+        return $"[{key}: {string.Join(", ", args)}]";
     }
 
     /// <summary>
@@ -222,7 +136,7 @@ public static class Localization
     {
         return statName switch
         {
-            "double_damage_count" => GetText(Keys.DoubleDamageCount, value),
+            "double_damage_count" => GetText(Keys.DoubleDamage, value),
             "vulnerable_applied" => GetText(Keys.VulnerableApplied, value),
             _ => $"[color=gray]{statName}: {value}[/color]"
         };

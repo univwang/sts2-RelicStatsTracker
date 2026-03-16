@@ -27,7 +27,7 @@ public static class Patches
     /// 在遗物悬浮提示中添加统计数据
     /// </summary>
     [HarmonyPatch(typeof(RelicModel), nameof(RelicModel.HoverTip), MethodType.Getter)]
-    public static class RelicModel_HoverTip_Patch
+    public static class RelicModelHoverTipPatch
     {
         public static void Postfix(RelicModel __instance, ref HoverTip __result)
         {
@@ -53,7 +53,7 @@ public static class Patches
     /// 在新局开始时清除统计数据
     /// </summary>
     [HarmonyPatch(typeof(RunManager), "InitializeNewRun")]
-    public static class RunManager_InitializeNewRun_Patch
+    public static class RunManagerInitializeNewRunPatch
     {
         public static void Prefix()
         {
@@ -70,7 +70,7 @@ public static class Patches
     /// 使用 Prefix 记录治疗前生命值，Postfix 计算实际治疗量
     /// </summary>
     [HarmonyPatch(typeof(BurningBlood), nameof(BurningBlood.AfterCombatVictory))]
-    public static class BurningBlood_AfterCombatVictory_Patch
+    public static class BurningBloodAfterCombatVictoryPatch
     {
         private static int _hpBeforeHeal;
 
@@ -97,7 +97,7 @@ public static class Patches
     /// 黑血 (BlackBlood) - 战斗胜利后治疗
     /// </summary>
     [HarmonyPatch(typeof(BlackBlood), nameof(BlackBlood.AfterCombatVictory))]
-    public static class BlackBlood_AfterCombatVictory_Patch
+    public static class BlackBloodAfterCombatVictoryPatch
     {
         private static int _hpBeforeHeal;
 
@@ -123,7 +123,7 @@ public static class Patches
     /// 小血瓶 (BloodVial) - 第一回合开始时治疗
     /// </summary>
     [HarmonyPatch(typeof(BloodVial), nameof(BloodVial.AfterPlayerTurnStartLate))]
-    public static class BloodVial_AfterPlayerTurnStartLate_Patch
+    public static class BloodVialAfterPlayerTurnStartLatePatch
     {
         private static int _hpBeforeHeal;
         private static bool _shouldTrack;
@@ -160,7 +160,7 @@ public static class Patches
     /// 锚 (Anchor) - 战斗开始时获得格挡
     /// </summary>
     [HarmonyPatch(typeof(Anchor), nameof(Anchor.BeforeCombatStart))]
-    public static class Anchor_BeforeCombatStart_Patch
+    public static class AnchorBeforeCombatStartPatch
     {
         public static void Postfix(Anchor __instance, Task __result)
         {
@@ -176,7 +176,7 @@ public static class Patches
     /// 华丽扇 (OrnamentalFan) - 每打出3张攻击牌获得格挡
     /// </summary>
     [HarmonyPatch(typeof(OrnamentalFan), nameof(OrnamentalFan.AfterCardPlayed))]
-    public static class OrnamentalFan_AfterCardPlayed_Patch
+    public static class OrnamentalFanAfterCardPlayedPatch
     {
         public static void Postfix(OrnamentalFan __instance, PlayerChoiceContext context, CardPlay cardPlay)
         {
@@ -207,7 +207,7 @@ public static class Patches
     /// 提灯 (Lantern) - 第一回合开始时获得能量
     /// </summary>
     [HarmonyPatch(typeof(Lantern), nameof(Lantern.AfterSideTurnStart))]
-    public static class Lantern_AfterSideTurnStart_Patch
+    public static class LanternAfterSideTurnStartPatch
     {
         public static void Postfix(Lantern __instance, CombatSide side, CombatState combatState, Task __result)
         {
@@ -225,7 +225,7 @@ public static class Patches
     /// 孙子兵法 (ArtOfWar) - 未打出攻击牌时获得能量
     /// </summary>
     [HarmonyPatch(typeof(ArtOfWar), nameof(ArtOfWar.AfterEnergyReset))]
-    public static class ArtOfWar_AfterEnergyReset_Patch
+    public static class ArtOfWarAfterEnergyResetPatch
     {
         public static void Postfix(ArtOfWar __instance, Player player, Task __result)
         {
@@ -247,7 +247,7 @@ public static class Patches
     /// 双节棍 (Nunchaku) - 每打出10张攻击牌获得能量
     /// </summary>
     [HarmonyPatch(typeof(Nunchaku), nameof(Nunchaku.AfterCardPlayed))]
-    public static class Nunchaku_AfterCardPlayed_Patch
+    public static class NunchakuAfterCardPlayedPatch
     {
         public static void Postfix(Nunchaku __instance, PlayerChoiceContext context, CardPlay cardPlay, Task __result)
         {
@@ -275,7 +275,7 @@ public static class Patches
     /// 手里剑 (Shuriken) - 每打出3张攻击牌获得力量
     /// </summary>
     [HarmonyPatch(typeof(Shuriken), nameof(Shuriken.AfterCardPlayed))]
-    public static class Shuriken_AfterCardPlayed_Patch
+    public static class ShurikenAfterCardPlayedPatch
     {
         public static void Postfix(Shuriken __instance, PlayerChoiceContext context, CardPlay cardPlay, Task __result)
         {
@@ -305,7 +305,7 @@ public static class Patches
     /// 苦无 (Kunai) - 每打出3张攻击牌获得敏捷
     /// </summary>
     [HarmonyPatch(typeof(Kunai), nameof(Kunai.AfterCardPlayed))]
-    public static class Kunai_AfterCardPlayed_Patch
+    public static class KunaiAfterCardPlayedPatch
     {
         public static void Postfix(Kunai __instance, PlayerChoiceContext context, CardPlay cardPlay, Task __result)
         {
@@ -339,7 +339,7 @@ public static class Patches
     /// 百年积木 (CentennialPuzzle) - 第一次受到伤害时抽牌
     /// </summary>
     [HarmonyPatch(typeof(CentennialPuzzle), nameof(CentennialPuzzle.AfterDamageReceived))]
-    public static class CentennialPuzzle_AfterDamageReceived_Patch
+    public static class CentennialPuzzleAfterDamageReceivedPatch
     {
         public static void Postfix(CentennialPuzzle __instance, PlayerChoiceContext choiceContext,
             Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource, Task __result)
@@ -368,7 +368,7 @@ public static class Patches
     /// 弹珠袋 (BagOfMarbles) - 战斗开始时给予敌人易伤
     /// </summary>
     [HarmonyPatch(typeof(BagOfMarbles), nameof(BagOfMarbles.BeforeSideTurnStart))]
-    public static class BagOfMarbles_BeforeSideTurnStart_Patch
+    public static class BagOfMarblesBeforeSideTurnStartPatch
     {
         public static void Postfix(BagOfMarbles __instance, PlayerChoiceContext choiceContext,
             CombatSide side, CombatState combatState, Task __result)
@@ -392,7 +392,7 @@ public static class Patches
     /// 笔尖 (PenNib) - 每打出10张攻击牌，下一张攻击牌伤害翻倍
     /// </summary>
     [HarmonyPatch(typeof(PenNib), nameof(PenNib.BeforeCardPlayed))]
-    public static class PenNib_BeforeCardPlayed_Patch
+    public static class PenNibBeforeCardPlayedPatch
     {
         public static void Postfix(PenNib __instance, CardPlay cardPlay)
         {
@@ -429,7 +429,7 @@ public static class Patches
     /// 在遗物序列化时保存统计数据
     /// </summary>
     [HarmonyPatch(typeof(RelicModel), nameof(RelicModel.ToSerializable))]
-    public static class RelicModel_ToSerializable_Patch
+    public static class RelicModelToSerializablePatch
     {
         public static void Postfix(RelicModel __instance, SerializableRelic __result)
         {
@@ -442,7 +442,7 @@ public static class Patches
     /// 在遗物从序列化数据恢复时加载统计数据
     /// </summary>
     [HarmonyPatch(typeof(RelicModel), nameof(RelicModel.FromSerializable))]
-    public static class RelicModel_FromSerializable_Patch
+    public static class RelicModelFromSerializablePatch
     {
         public static void Postfix(SerializableRelic save, RelicModel __result)
         {

@@ -52,7 +52,7 @@
         <PackageReference Include="Alchyr.Sts2.BaseLib" Version="*" />
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*" />
 
-        <AdditionalFiles Include="ModTemplate\localization\**\*.json"/>
+        <AdditionalFiles Include="RelicStatsTracker\localization\**\*.json"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -60,7 +60,6 @@
         <Compile Remove="materials\**"/>
         <Compile Remove="shaders\**"/>
         <Compile Remove="images\**"/>
-        <EmbeddedResource Remove="RelicStatsTracker\**"/>
         <EmbeddedResource Remove="materials\**"/>
         <EmbeddedResource Remove="shaders\**"/>
         <EmbeddedResource Remove="images\**"/>
@@ -72,13 +71,15 @@
         <Content Include="LICENSE" />
         <Content Include="mod_manifest.json"/>
         <Content Include="project.godot"/>
-        <Content Include="RelicStatsTracker\**"/>
+<!--        <Content Include="RelicStatsTracker\localization\eng\relics.json" />-->
+        <Content Include="RelicStatsTracker\mod_image.png" />
+        <Content Include="RelicStatsTracker\mod_image.png.import" />
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="RelicStatsTracker\localization\**\*.json">
-            <LogicalName>$(MSBuildProjectName).localization.%(Filename)%(Extension)</LogicalName>
-        </EmbeddedResource>
+<!--        <EmbeddedResource Include="RelicStatsTracker\localization\**\*.json">-->
+<!--            <LogicalName>$(MSBuildProjectName).localization.%(Filename)%(Extension)</LogicalName>-->
+<!--        </EmbeddedResource>-->
     </ItemGroup>
 
     <ItemGroup>

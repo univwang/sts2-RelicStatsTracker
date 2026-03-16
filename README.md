@@ -10,7 +10,7 @@
 - 💬 **悬浮提示增强**：在遗物悬浮提示中显示统计数据
 - 💾 **数据持久化**：保存退出游戏后，再回来能够正确读取遗物的统计数据
 - 📜 **历史记录支持**：一局游戏成功或失败后能够在历史记录栏查看遗物统计信息
-- 🌐 **多语言支持**：支持中文和英文
+- 🌐 **多语言支持**：支持中文和英文，可通过本地化文件自定义
 - 🔄 **自动重置**：新局开始时自动清除上一局的统计数据
 
 ## 支持的遗物
@@ -98,11 +98,63 @@ RelicStatsTracker/
 ├── Patches.cs               # Harmony Patches
 ├── mod_manifest.json        # Mod 清单
 ├── project.godot            # Godot 项目配置
-└── RelicStatsTracker/
+└── RelicStatsTracker/       # 打包资源目录
     └── localization/
-        ├── en.json          # 英文本地化
-        └── zhs.json         # 中文本地化
+        ├── eng/
+        │   └── relics.json  # 英文本地化
+        └── zhs/
+            └── relics.json  # 中文本地化
 ```
+
+## 本地化
+
+### 本地化文件格式
+
+本地化文件使用 JSON 格式，键名使用 `stats.` 前缀：
+
+```json
+{
+  "stats.header": "\n——Stats——",
+  "stats.trigger_count": "[color=yellow]Triggered: {0}[/color]",
+  "stats.total_heal": "[color=green]Total Heal: {0}[/color]",
+  "stats.total_damage": "[color=red]Total Damage: {0}[/color]",
+  "stats.total_block": "[color=blue]Total Block: {0}[/color]",
+  "stats.total_energy": "[color=cyan]Total Energy: {0}[/color]",
+  "stats.strength_gained": "[color=red]Strength Gained: {0}[/color]",
+  "stats.dexterity_gained": "[color=blue]Dexterity Gained: {0}[/color]",
+  "stats.cards_drawn": "[color=white]Cards Drawn: {0}[/color]",
+  "stats.double_damage": "[color=orange]Double Damage: {0}[/color]",
+  "stats.vulnerable_applied": "[color=orange]Vulnerable Applied: {0}[/color]"
+}
+```
+
+### 支持的语言
+
+| 语言代码 | 目录名 |
+|----------|--------|
+| English | `eng` |
+| 简体中文 | `zhs` |
+
+### 添加新语言
+
+1. 在 `RelicStatsTracker/localization/` 下创建新的语言目录（如 `jpn`）
+2. 创建 `relics.json` 文件并翻译所有键值
+3. 重新构建 Mod
+
+### BBCode 格式化
+
+本地化文本支持 BBCode 格式化：
+
+| 标签 | 效果 |
+|------|------|
+| `[color=red]...[/color]` | 红色文本 |
+| `[color=green]...[/color]` | 绿色文本 |
+| `[color=blue]...[/color]` | 蓝色文本 |
+| `[color=yellow]...[/color]` | 黄色文本 |
+| `[color=cyan]...[/color]` | 青色文本 |
+| `[color=orange]...[/color]` | 橙色文本 |
+| `[b]...[/b]` | 粗体 |
+| `{0}` | 参数占位符 |
 
 ## 技术实现
 
@@ -139,7 +191,7 @@ SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(RelicStatsProperties));
 
 ```csharp
 [HarmonyPatch(typeof(RelicModel), nameof(RelicModel.HoverTip), MethodType.Getter)]
-public static class RelicModel_HoverTip_Patch
+public static class RelicModelHoverTipPatch
 {
     public static void Postfix(RelicModel __instance, ref HoverTip __result)
     {
@@ -159,12 +211,18 @@ public static class RelicModel_HoverTip_Patch
 
 ```csharp
 [HarmonyPatch(typeof(BurningBlood), nameof(BurningBlood.AfterCombatVictory))]
-public static class BurningBlood_AfterCombatVictory_Patch
+public static class BurningBloodAfterCombatVictoryPatch
 {
-    public static void Postfix(BurningBlood __instance, CombatRoom _)
+    public static void Postfix(BurningBlood __instance, CombatRoom _, Task __result)
     {
-        int healAmount = __instance.DynamicVars.Heal.IntValue;
-        RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, healAmount);
+        __result.ContinueWith(_ =>
+        {
+            int actualHeal = __instance.Owner.Creature.CurrentHp - _hpBeforeHeal;
+            if (actualHeal > 0)
+            {
+                RelicStatsManager.RecordTrigger(__instance, RelicStatType.Heal, actualHeal);
+            }
+        });
     }
 }
 ```
@@ -173,11 +231,11 @@ public static class BurningBlood_AfterCombatVictory_Patch
 
 ### 添加新遗物追踪
 
-1. 在 `Patches.cs` 中添加新的 Patch 类：
+1. 在 `Patches.cs` 中添加新的 Patch 类（使用驼峰命名法）：
 
 ```csharp
 [HarmonyPatch(typeof(YourRelic), nameof(YourRelic.TriggerMethod))]
-public static class YourRelic_TriggerMethod_Patch
+public static class YourRelicTriggerMethodPatch
 {
     public static void Postfix(YourRelic __instance, ...)
     {
@@ -191,6 +249,35 @@ public static class YourRelic_TriggerMethod_Patch
 3. 如果需要新的持久化属性，在 `RelicStatsProperties.cs` 中添加属性。
 
 4. 在本地化文件中添加对应的文本。
+
+### 添加新的本地化键
+
+1. 在 `Localization.cs` 的 `Keys` 类中添加新键：
+
+```csharp
+public static class Keys
+{
+    // ...
+    public const string NewStat = "stats.new_stat";
+}
+```
+
+2. 在 `BuildStatsText` 方法中使用新键：
+
+```csharp
+if (stats.NewStat > 0)
+{
+    lines.Add(GetText(Keys.NewStat, stats.NewStat));
+}
+```
+
+3. 在所有本地化文件中添加翻译：
+
+```json
+{
+  "stats.new_stat": "[color=purple]New Stat: {0}[/color]"
+}
+```
 
 ## 已知限制
 
