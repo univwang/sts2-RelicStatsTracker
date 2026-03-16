@@ -21,20 +21,24 @@ public static class CardPatches
 
     /// <summary>
     /// 百年积木 - 第一次受到伤害时抽牌
+    /// 使用 Prefix 记录状态，因为 Postfix 时 UsedThisCombat 已被设置为 true
     /// </summary>
     [HarmonyPatch(typeof(CentennialPuzzle), nameof(CentennialPuzzle.AfterDamageReceived))]
     public static class CentennialPuzzleAfterDamageReceivedPatch
     {
-        public static void Postfix(CentennialPuzzle __instance, PlayerChoiceContext choiceContext,
-            Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource, Task __result)
+        private static bool _shouldRecord;
+
+        public static void Prefix(CentennialPuzzle __instance, Creature target, DamageResult result)
         {
-            if (!MegaCrit.Sts2.Core.Combat.CombatManager.Instance.IsInProgress ||
-                target != __instance.Owner.Creature ||
-                result.UnblockedDamage <= 0 ||
-                __instance.UsedThisCombat)
-            {
-                return;
-            }
+            _shouldRecord = CombatManager.Instance.IsInProgress
+                && target == __instance.Owner.Creature
+                && result.UnblockedDamage > 0
+                && !__instance.UsedThisCombat;
+        }
+
+        public static void Postfix(CentennialPuzzle __instance, Task __result)
+        {
+            if (!_shouldRecord) return;
 
             __result.ContinueWith(_ =>
             {
