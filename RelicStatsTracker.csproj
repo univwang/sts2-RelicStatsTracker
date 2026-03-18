@@ -4,6 +4,9 @@
         <ImplicitUsings>true</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <DefaultItemExcludes>packages/**</DefaultItemExcludes>
+        <AppOutputBase>$(MSBuildProjectDirectory)\</AppOutputBase>
+        <PathMap>$(AppOutputBase)=.\</PathMap>
     </PropertyGroup>
 
     <!-- OS Detection -->
@@ -21,6 +24,7 @@
         <SteamRoot Condition="'$(SteamRoot)' == ''">$(registry:HKEY_CURRENT_USER\Software\Valve\Steam@SteamPath)</SteamRoot>
         <SteamLibraryPath Condition="'$(SteamLibraryPath)' == '' and '$(SteamRoot)' != ''">$(SteamRoot)\steamapps</SteamLibraryPath>
         <Sts2Path Condition="'$(Sts2Path)' == ''">$(SteamLibraryPath)/common/Slay the Spire 2</Sts2Path>
+        <ModsPath Condition="'$(ModsPath)' == ''">$(Sts2Path)/mods/</ModsPath>
         <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)/data_sts2_windows_x86_64</Sts2DataDir>
         <GodotPath Condition="'$(GodotPath)' == ''">F:\learn\usual\MegaDot_v4.5.1-stable_mono_win64.exe</GodotPath>
     </PropertyGroup>
@@ -29,6 +33,7 @@
     <PropertyGroup Condition="'$(IsLinux)' == 'true'">
         <SteamLibraryPath Condition="'$(SteamLibraryPath)' == ''">$(HOME)/.local/share/Steam/steamapps</SteamLibraryPath>
         <Sts2Path Condition="'$(Sts2Path)' == ''">$(SteamLibraryPath)/common/Slay the Spire 2</Sts2Path>
+        <ModsPath Condition="'$(ModsPath)' == ''">$(Sts2Path)/mods/</ModsPath>
         <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)/data_sts2_linuxbsd_x86_64</Sts2DataDir>
         <GodotPath Condition="'$(GodotPath)' == ''">$(SteamLibraryPath)/common/Megadot/MegaDot.x86_64</GodotPath>
     </PropertyGroup>
@@ -37,22 +42,27 @@
     <PropertyGroup Condition="'$(IsOSX)' == 'true'">
         <SteamLibraryPath Condition="'$(SteamLibraryPath)' == ''">$(HOME)/Library/Application Support/Steam/steamapps</SteamLibraryPath>
         <Sts2Path Condition="'$(Sts2Path)' == ''">$(SteamLibraryPath)/common/Slay the Spire 2</Sts2Path>
-        <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)/data_sts2_macos_x86_64</Sts2DataDir>
+        <ModsPath Condition="'$(ModsPath)' == ''">$(Sts2Path)/SlayTheSpire2.app/Contents/MacOS/mods/</ModsPath>
+        <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)/SlayTheSpire2.app/Contents/Resources/data_sts2_macos_x86_64</Sts2DataDir>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <NoWarn>$(NoWarn);MSB3270</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="SmartFormat" Version="3.6.1" />
         <Reference Include="0Harmony">
             <HintPath>$(Sts2DataDir)/0Harmony.dll</HintPath>
+            <Private>false</Private>
         </Reference>
         <Reference Include="sts2">
             <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
-            <Publicize>PublicizeSts</Publicize>
+            <Private>false</Private>
+            <Publicize>True</Publicize>
         </Reference>
         <PackageReference Include="Alchyr.Sts2.BaseLib" Version="*" />
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*" />
-
-        <AdditionalFiles Include="RelicStatsTracker\localization\**\*.json"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -68,18 +78,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Include="RelicStatsTracker.json"/>
+        <None Include="project.godot"/>
         <Content Include="LICENSE" />
-        <Content Include="mod_manifest.json"/>
-        <Content Include="project.godot"/>
-<!--        <Content Include="RelicStatsTracker\localization\eng\relics.json" />-->
         <Content Include="RelicStatsTracker\mod_image.png" />
         <Content Include="RelicStatsTracker\mod_image.png.import" />
-    </ItemGroup>
-
-    <ItemGroup>
-<!--        <EmbeddedResource Include="RelicStatsTracker\localization\**\*.json">-->
-<!--            <LogicalName>$(MSBuildProjectName).localization.%(Filename)%(Extension)</LogicalName>-->
-<!--        </EmbeddedResource>-->
     </ItemGroup>
 
     <ItemGroup>
@@ -90,14 +93,14 @@
     </ItemGroup>
 
     <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent">
-        <Message Text="Copying .dll to mods folder." Importance="high"/>
-        <MakeDir Directories="$(Sts2Path)/mods" Condition="'$(Sts2Path)' != ''"/>
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(Sts2Path)/mods/" Condition="'$(Sts2Path)' != ''"/>
+        <Message Text="Copying .dll and manifest to mods folder." Importance="high"/>
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/"/>
+        <Copy SourceFiles="RelicStatsTracker.json" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/"/>
     </Target>
 
     <Target Name="GodotPublish" AfterTargets="Publish" Condition="'$(GodotPath)' != '' and Exists('$(GodotPath)') and '$(IsInnerGodotExport)' != 'true'">
         <Message Text="Exporting Godot .pck to mods folder" Importance="high"/>
-        <Exec Command="&quot;$(GodotPath)&quot; --headless --export-pack &quot;Windows Desktop&quot; &quot;$(Sts2Path)/mods/$(MSBuildProjectName).pck&quot;"
+        <Exec Command="&quot;$(GodotPath)&quot; --headless --export-pack &quot;Windows Desktop&quot; &quot;$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck&quot;"
               EnvironmentVariables="IsInnerGodotExport=true;MSBUILDDISABLENODEREUSE=1"
               ContinueOnError="WarnAndContinue"/>
     </Target>
